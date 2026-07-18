@@ -1,0 +1,153 @@
+services:
+  # ===== MongoDB Database =====
+  mongo:
+    image: mongo:4.4
+    container_name: cloudedtech-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: cloudedtech
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+      - ./infra/mongodb/init.js:/docker-entrypoint-initdb.d/init.js
+    networks:
+      - cloudedtech-network
+    healthcheck:
+      test: mongo --eval 'db.runCommand("ping").ok' localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== Redis Cache & Session Store =====
+  redis:
+    image: redis:7-alpine
+    container_name: cloudedtech-redis
+    command: redis-server --requirepass redis123
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - cloudedtech-network
+    healthcheck:
+      test: redis-cli --raw incr ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== RabbitMQ Message Broker =====
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: cloudedtech-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - cloudedtech-network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== FFmpeg Service (for encoding) =====
+  ffmpeg:
+    profiles:
+      - legacy-worker
+    build:
+      context: ./infra
+      dockerfile: Dockerfile.ffmpeg
+    container_name: cloudedtech-ffmpeg
+    volumes:
+      - ffmpeg-temp:/tmp/cloudedtech/videos
+      - encoded-videos:/data/encoded-videos
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      FFMPEG_PATH: /usr/bin/ffmpeg
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - cloudedtech-network
+
+  # ===== Prometheus Metrics =====
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cloudedtech-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - cloudedtech-network
+
+  # ===== Grafana Monitoring =====
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cloudedtech-grafana
+    ports:
+      - '3003:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - cloudedtech-network
+
+  # ===== Jaeger Tracing =====
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: cloudedtech-jaeger
+    ports:
+      - '6831:6831/udp'
+      - '16686:16686'
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ':9411'
+    networks:
+      - cloudedtech-network
+
+  # ===== MinIO (S3-compatible object storage for local dev) =====
+  minio:
+    image: minio/minio:latest
+    container_name: cloudedtech-minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/minio_data
+    command: server /minio_data --console-address ":9001"
+    networks:
+      - cloudedtech-network
+
+volumes:
+  mongo-data:
+  redis-data:
+  rabbitmq-data:
+  prometheus-data:
+  grafana-data:
+  minio-data:
+  ffmpeg-temp:
+  encoded-videos:
+
+networks:
+  cloudedtech-network:
+    driver: bridge

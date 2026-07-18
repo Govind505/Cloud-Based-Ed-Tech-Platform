@@ -1,0 +1,615 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudedtech
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudedtech-config
+  namespace: cloudedtech
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  STREAMING_QUALITY_LEVELS: "240,360,480,720"
+  HLS_SEGMENT_DURATION: "6"
+  HLS_PLAYLIST_SIZE: "10"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudedtech-secrets
+  namespace: cloudedtech
+type: Opaque
+stringData:
+  JWT_SECRET: "change-this-in-production-use-secure-secret"
+  MONGODB_PASSWORD: "secure-password-change-this"
+  REDIS_PASSWORD: "secure-password-change-this"
+  AWS_ACCESS_KEY_ID: "your-aws-key"
+  AWS_SECRET_ACCESS_KEY: "your-aws-secret"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: cloudedtech
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: encoded-videos-pvc
+  namespace: cloudedtech
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: cloudedtech
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  clusterIP: None
+  selector:
+    app: mongodb
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: cloudedtech
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  clusterIP: None
+  selector:
+    app: redis
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: cloudedtech
+spec:
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+  clusterIP: None
+  selector:
+    app: rabbitmq
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: cloudedtech
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cloudedtech-secrets
+              key: MONGODB_PASSWORD
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command: ["mongo", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command: ["mongo", "--eval", "db.adminCommand('ping')"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: cloudedtech
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--requirepass", "$(REDIS_PASSWORD)"]
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cloudedtech-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        livenessProbe:
+          exec:
+            command: ["redis-cli", "ping"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: cloudedtech
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3.12-management-alpine
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          value: "guest"
+        - name: RABBITMQ_DEFAULT_PASS
+          value: "guest"
+        - name: RABBITMQ_DEFAULT_VHOST
+          value: "/"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        livenessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "-q", "ping"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command: ["rabbitmq-diagnostics", "-q", "ping"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudedtech-backend
+  namespace: cloudedtech
+  labels:
+    app: cloudedtech-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: cloudedtech-backend
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudedtech-backend
+  namespace: cloudedtech
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cloudedtech-backend
+  template:
+    metadata:
+      labels:
+        app: cloudedtech-backend
+    spec:
+      serviceAccountName: cloudedtech-backend
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cloudedtech-backend
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: backend
+        image: cloudedtech/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: cloudedtech-config
+        - secretRef:
+            name: cloudedtech-secrets
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://admin:$(MONGODB_PASSWORD)@mongodb:27017/cloudedtech?authSource=admin"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: RABBITMQ_URL
+          value: "amqp://guest:guest@rabbitmq:5672"
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudedtech-backend
+  namespace: cloudedtech
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloudedtech-backend
+  namespace: cloudedtech
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloudedtech-backend
+  namespace: cloudedtech
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloudedtech-backend
+subjects:
+- kind: ServiceAccount
+  name: cloudedtech-backend
+  namespace: cloudedtech
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudedtech-frontend
+  namespace: cloudedtech
+  labels:
+    app: cloudedtech-frontend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3001
+    protocol: TCP
+    name: http
+  selector:
+    app: cloudedtech-frontend
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudedtech-frontend
+  namespace: cloudedtech
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cloudedtech-frontend
+  template:
+    metadata:
+      labels:
+        app: cloudedtech-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: cloudedtech/frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+          name: http
+        env:
+        - name: REACT_APP_API_BASE_URL
+          value: "https://api.cloudedtech.example.com/api"
+        - name: REACT_APP_WS_URL
+          value: "wss://api.cloudedtech.example.com/ws"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloudedtech-backend-hpa
+  namespace: cloudedtech
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloudedtech-backend
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloudedtech-frontend-hpa
+  namespace: cloudedtech
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloudedtech-frontend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudedtech-backend-pdb
+  namespace: cloudedtech
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cloudedtech-backend
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudedtech-frontend-pdb
+  namespace: cloudedtech
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cloudedtech-frontend
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: cloudedtech
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - port: 9090
+    targetPort: 9090
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: cloudedtech
+spec:
+  type: LoadBalancer
+  selector:
+    app: grafana
+  ports:
+  - port: 3000
+    targetPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: cloudedtech
+spec:
+  selector:
+    app: jaeger
+  ports:
+  - port: 6831
+    targetPort: 6831
+    protocol: UDP
+  - port: 16686
+    targetPort: 16686
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cloudedtech-network-policy
+  namespace: cloudedtech
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: cloudedtech
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: cloudedtech
+  - to:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

@@ -1,0 +1,13 @@
+{
+  "name": "ffmpeg-worker",
+  "version": "1.0.0",
+  "description": "FFmpeg encoding worker service",
+  "main": "src/worker.js",
+  "scripts": {
+    "start": "node src/worker.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "express": "^4.18.2"
+  }
+}

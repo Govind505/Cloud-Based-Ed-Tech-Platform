@@ -11,59 +11,69 @@ async function seed() {
     const db = mongoose.connection.db;
 
     // 1. Seed Users
-    console.log('Checking users...');
-    const userCount = await db.collection('users').countDocuments();
-    let userId;
-    
-    if (userCount === 0) {
-      console.log('No users found. Creating default users...');
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('password123', salt);
-      
-      const defaultUsers = [
-        {
-          email: 'student@cloudedtech.com',
-          firstName: 'Sarah',
-          lastName: 'Chen',
-          password: hashedPassword,
-          role: 'student',
-          isActive: true,
-          emailVerified: true,
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-          bio: 'Aspiring Frontend Developer',
-          subscriptionTier: 'free',
-          enrolledCourses: [
-            { courseId: 'react-basics', title: 'React Basics', progress: 15, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800' },
-            { courseId: 'python-beginners', title: 'Python for Beginners', progress: 0, image: 'https://images.unsplash.com/photo-1649180556628-9ba704115795?w=800' }
-          ],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        {
-          email: 'admin@cloudedtech.com',
-          firstName: 'Alex',
-          lastName: 'Rivera',
-          password: hashedPassword,
-          role: 'admin',
-          isActive: true,
-          emailVerified: true,
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
-          bio: 'Senior Infrastructure Engineer',
-          subscriptionTier: 'premium',
-          enrolledCourses: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      ];
+    console.log('Clearing old default seed users...');
+    await db.collection('users').deleteMany({
+      email: { $in: ['student@cloudedtech.com', 'admin@cloudedtech.com', 'instructor@cloudedtech.com'] }
+    });
 
-      const result = await db.collection('users').insertMany(defaultUsers);
-      userId = result.insertedIds[0].toString();
-      console.log('Default users created successfully.');
-    } else {
-      const existingUser = await db.collection('users').findOne({});
-      userId = existingUser._id.toString();
-      console.log('Users already exist in database.');
-    }
+    console.log('Creating default users...');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('password123', salt);
+    
+    const defaultUsers = [
+      {
+        email: 'student@cloudedtech.com',
+        firstName: 'Sarah',
+        lastName: 'Chen',
+        password: hashedPassword,
+        role: 'student',
+        isActive: true,
+        emailVerified: true,
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+        bio: 'Aspiring Frontend Developer',
+        subscriptionTier: 'free',
+        enrolledCourses: [
+          { courseId: 'react-basics', title: 'React Basics', progress: 15, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800' },
+          { courseId: 'python-beginners', title: 'Python for Beginners', progress: 0, image: 'https://images.unsplash.com/photo-1649180556628-9ba704115795?w=800' }
+        ],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        email: 'instructor@cloudedtech.com',
+        firstName: 'Marcus',
+        lastName: 'Aurelius',
+        password: hashedPassword,
+        role: 'instructor',
+        isActive: true,
+        emailVerified: true,
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+        bio: 'Senior Technical Instructor & Author',
+        subscriptionTier: 'premium',
+        enrolledCourses: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        email: 'admin@cloudedtech.com',
+        firstName: 'Alex',
+        lastName: 'Rivera',
+        password: hashedPassword,
+        role: 'admin',
+        isActive: true,
+        emailVerified: true,
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+        bio: 'Senior Infrastructure Engineer',
+        subscriptionTier: 'premium',
+        enrolledCourses: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+
+    const result = await db.collection('users').insertMany(defaultUsers);
+    const userId = result.insertedIds[0].toString();
+    console.log('Default users created successfully.');
 
     // 2. Seed Videos
     console.log('Checking videos...');

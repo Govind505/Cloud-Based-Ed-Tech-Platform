@@ -30,7 +30,14 @@ export default function OAuthCallback() {
           description: `Successfully logged in via Google as ${user.firstName}.`,
         });
 
-        navigate("/dashboard", { replace: true });
+        let targetPath = "/dashboard";
+        if (user.role?.toLowerCase() === "admin") {
+          targetPath = "/admin";
+        } else if (user.role?.toLowerCase() === "instructor") {
+          targetPath = "/instructor";
+        }
+
+        navigate(targetPath, { replace: true });
       } catch (error) {
         console.error("Failed to parse Google user data", error);
         toast({

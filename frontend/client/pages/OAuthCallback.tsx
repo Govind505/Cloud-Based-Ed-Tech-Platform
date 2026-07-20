@@ -12,16 +12,16 @@ export default function OAuthCallback() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const refresh = searchParams.get("refresh");
+    const refreshToken = searchParams.get("refreshToken") || searchParams.get("refresh");
     const userStr = searchParams.get("user");
 
-    if (token && refresh && userStr) {
+    if (token && refreshToken && userStr) {
       try {
         const user = JSON.parse(userStr);
         // Save auth state via store
         setAuth({
           accessToken: token,
-          refreshToken: refresh,
+          refreshToken: refreshToken,
           user,
         });
 

@@ -149,6 +149,7 @@ export class AuthController {
       const params = new URLSearchParams({
         token: authResponse.accessToken,
         refresh: authResponse.refreshToken,
+        refreshToken: authResponse.refreshToken,
         user: JSON.stringify(authResponse.user),
       });
       return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
@@ -171,6 +172,7 @@ export class AuthController {
       const params = new URLSearchParams({
         token: authResponse.accessToken,
         refresh: authResponse.refreshToken,
+        refreshToken: authResponse.refreshToken,
         user: JSON.stringify(authResponse.user),
       });
       return res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);

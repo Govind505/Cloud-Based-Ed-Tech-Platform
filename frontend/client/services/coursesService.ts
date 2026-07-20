@@ -27,10 +27,13 @@ export interface Lesson {
   _id: string;
   moduleId: string;
   title: string;
-  type: 'video' | 'text';
+  type: 'video' | 'text' | 'live';
   videoId?: string;
   content?: string;
   duration: number;
+  meetingId?: string;
+  startTime?: string;
+  meetingStatus?: 'scheduled' | 'active' | 'completed';
 }
 
 export interface Quiz {
@@ -74,8 +77,22 @@ export const coursesService = {
     return res.data;
   },
 
-  async addLesson(moduleId: string, payload: { title: string; type: 'video' | 'text'; videoId?: string; content?: string; duration?: number }): Promise<Lesson> {
+  async addLesson(moduleId: string, payload: { 
+    title: string; 
+    type: 'video' | 'text' | 'live'; 
+    videoId?: string; 
+    content?: string; 
+    duration?: number;
+    meetingId?: string;
+    startTime?: string;
+    meetingStatus?: 'scheduled' | 'active' | 'completed';
+  }): Promise<Lesson> {
     const res = await api.post(`/courses/modules/${moduleId}/lessons`, payload);
+    return res.data;
+  },
+
+  async updateLiveStatus(lessonId: string, status: 'scheduled' | 'active' | 'completed'): Promise<Lesson> {
+    const res = await api.patch(`/courses/lessons/${lessonId}/live-status`, { status });
     return res.data;
   },
 

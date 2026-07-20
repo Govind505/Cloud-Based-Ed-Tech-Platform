@@ -93,7 +93,17 @@ export class CoursesService {
     return savedModule;
   }
 
-  async addLesson(moduleId: string, title: string, type: string, content?: string, videoId?: string, duration?: number): Promise<Lesson> {
+  async addLesson(
+    moduleId: string,
+    title: string,
+    type: string,
+    content?: string,
+    videoId?: string,
+    duration?: number,
+    meetingId?: string,
+    startTime?: string,
+    meetingStatus?: string
+  ): Promise<Lesson> {
     if (!Types.ObjectId.isValid(moduleId)) {
       throw new BadRequestException('Invalid Module ID');
     }
@@ -108,10 +118,28 @@ export class CoursesService {
       content,
       videoId,
       duration: duration || 0,
+      meetingId,
+      startTime: startTime ? new Date(startTime) : undefined,
+      meetingStatus: meetingStatus || (type === 'live' ? 'scheduled' : undefined),
     });
     const savedLesson = await lesson.save();
     module.lessons.push(savedLesson._id as Types.ObjectId);
     await module.save();
     return savedLesson;
+  }
+
+  async updateLiveStatus(lessonId: string, status: string): Promise<Lesson> {
+    if (!Types.ObjectId.isValid(lessonId)) {
+      throw new BadRequestException('Invalid Lesson ID');
+    }
+    const lesson = await this.lessonModel.findById(lessonId);
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
+    if (lesson.type !== 'live') {
+      throw new BadRequestException('Lesson is not a live class');
+    }
+    lesson.meetingStatus = status;
+    return lesson.save();
   }
 }

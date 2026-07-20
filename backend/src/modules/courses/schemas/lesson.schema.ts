@@ -9,7 +9,7 @@ export class Lesson extends Document {
   @Prop({ required: true, trim: true })
   title: string;
 
-  @Prop({ required: true, type: String, enum: ['video', 'text'], default: 'video' })
+  @Prop({ required: true, type: String, enum: ['video', 'text', 'live'], default: 'video' })
   type: string;
 
   @Prop({ type: String, ref: 'Video' })
@@ -19,7 +19,16 @@ export class Lesson extends Document {
   content?: string;
 
   @Prop({ default: 0 })
-  duration: number; // in seconds
+  duration: number; // in seconds/minutes
+
+  @Prop({ type: String, trim: true })
+  meetingId?: string;
+
+  @Prop({ type: Date })
+  startTime?: Date;
+
+  @Prop({ type: String, enum: ['scheduled', 'active', 'completed'], default: 'scheduled' })
+  meetingStatus?: string;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);

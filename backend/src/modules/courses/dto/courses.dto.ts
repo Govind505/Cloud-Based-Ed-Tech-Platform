@@ -30,7 +30,7 @@ export class CreateLessonDto {
   title: string;
 
   @IsString()
-  @IsEnum(['video', 'text'])
+  @IsEnum(['video', 'text', 'live'])
   type: string;
 
   @IsString()
@@ -44,4 +44,16 @@ export class CreateLessonDto {
   @IsNumber()
   @IsOptional()
   duration?: number;
+
+  @IsString()
+  @IsOptional()
+  meetingId?: string;
+
+  @IsString()
+  @IsOptional()
+  startTime?: string;
+
+  @IsString()
+  @IsOptional()
+  meetingStatus?: string;
 }

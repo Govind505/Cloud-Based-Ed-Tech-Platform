@@ -5,7 +5,7 @@ import Hls from "hls.js";
 import {
   ArrowLeft, PlayCircle, Clock, BookOpen, Share2,
   Loader2, ThumbsUp, CheckCircle, ChevronRight, StickyNote,
-  MessageSquare, Star, Heart, Send, Lock, FileText, CheckCircle2 as CheckedIcon, HelpCircle, GraduationCap
+  MessageSquare, Star, Heart, Send, Lock, FileText, CheckCircle2 as CheckedIcon, HelpCircle, GraduationCap, Video
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -233,6 +233,65 @@ export default function Watch() {
                       className="w-full h-full object-contain bg-black"
                       src={playbackUrl || fallbackVideoUrl}
                     />
+                  ) : activeLesson.type === "live" ? (
+                    <div className="w-full h-full p-8 md:p-12 overflow-y-auto bg-zinc-900/40 text-center flex flex-col items-center justify-center gap-6 text-zinc-200">
+                      <div className="h-16 w-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <Video className="h-8 w-8 animate-pulse" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <h2 className="text-2xl md:text-3xl font-black text-white">{activeLesson.title}</h2>
+                        <p className="text-sm text-zinc-400 font-bold uppercase tracking-wider">Live Virtual Classroom</p>
+                      </div>
+
+                      <div className="w-full max-w-sm bg-zinc-950/60 border border-zinc-850 rounded-xl p-5 space-y-4 text-left">
+                        <div className="flex justify-between border-b border-zinc-900 pb-2">
+                          <span className="text-zinc-500 text-xs">Start Time:</span>
+                          <span className="text-zinc-200 text-xs font-bold">
+                            {activeLesson.startTime ? new Date(activeLesson.startTime).toLocaleString() : "TBD"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-900 pb-2">
+                          <span className="text-zinc-500 text-xs">Duration:</span>
+                          <span className="text-zinc-200 text-xs font-bold">{activeLesson.duration || 60} Minutes</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500 text-xs">Class Status:</span>
+                          <span className="text-xs font-black uppercase flex items-center gap-1">
+                            {activeLesson.meetingStatus === "scheduled" && (
+                              <span className="text-amber-400">● Scheduled</span>
+                            )}
+                            {activeLesson.meetingStatus === "active" && (
+                              <span className="text-emerald-400 animate-pulse">● Active Now</span>
+                            )}
+                            {activeLesson.meetingStatus === "completed" && (
+                              <span className="text-zinc-500">● Finished</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {activeLesson.meetingStatus === "scheduled" && (
+                        <div className="text-sm text-zinc-500 italic mt-2">
+                          The live classroom hasn't started yet. Please wait for the instructor to launch the session.
+                        </div>
+                      )}
+
+                      {activeLesson.meetingStatus === "active" && (
+                        <button
+                          onClick={() => navigate(`/live/${activeLesson.meetingId || activeLesson._id}`)}
+                          className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-emerald-900/20 animate-pulse"
+                        >
+                          Join Virtual Classroom
+                        </button>
+                      )}
+
+                      {activeLesson.meetingStatus === "completed" && (
+                        <div className="text-sm text-zinc-500 mt-2">
+                          This live session has concluded. Check the student discussion board for lecture notes or class slides.
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     /* Reading Pane */
                     <div className="w-full h-full p-8 md:p-12 overflow-y-auto bg-zinc-900/40 text-left flex flex-col gap-4 text-zinc-200">
@@ -440,6 +499,8 @@ export default function Watch() {
                                   <CheckedIcon className="h-4 w-4 text-emerald-400 fill-emerald-500/10" />
                                 ) : les.type === "video" ? (
                                   <PlayCircle className="h-4 w-4 text-zinc-500" />
+                                ) : les.type === "live" ? (
+                                  <Video className="h-4 w-4 text-emerald-400 animate-pulse" />
                                 ) : (
                                   <FileText className="h-4 w-4 text-zinc-500" />
                                 )}

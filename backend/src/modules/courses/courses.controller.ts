@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto, CreateModuleDto, CreateLessonDto } from './dto/courses.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -65,6 +65,18 @@ export class CoursesController {
       createLessonDto.content,
       createLessonDto.videoId,
       createLessonDto.duration,
+      createLessonDto.meetingId,
+      createLessonDto.startTime,
+      createLessonDto.meetingStatus,
     );
+  }
+
+  @Patch('lessons/:lessonId/live-status')
+  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  async updateLiveStatus(
+    @Param('lessonId') lessonId: string,
+    @Body('status') status: string,
+  ) {
+    return this.coursesService.updateLiveStatus(lessonId, status);
   }
 }

@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import CoursesList from "./pages/CoursesList";
 import CourseDetails from "./pages/CourseDetails";
 import CommunityChat from "./pages/CommunityChat";
+import LiveClassroom from "./pages/LiveClassroom";
 import { useAuthStore } from "./store/authStore";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -73,6 +74,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Watch />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/live/:meetingId" 
+              element={
+                <ProtectedRoute>
+                  <LiveClassroom />
                 </ProtectedRoute>
               } 
             />

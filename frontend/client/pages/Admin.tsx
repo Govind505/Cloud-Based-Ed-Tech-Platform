@@ -109,9 +109,12 @@ export default function Admin() {
 
   const [showCreateLesson, setShowCreateLesson] = useState<string | null>(null); // moduleId
   const [lTitle, setLTitle] = useState("");
-  const [lType, setLType] = useState<"video" | "text">("video");
+  const [lType, setLType] = useState<"video" | "text" | "live">("video");
   const [lContent, setLContent] = useState("");
   const [lVideoId, setLVideoId] = useState("");
+  const [lMeetingId, setLMeetingId] = useState("");
+  const [lStartTime, setLStartTime] = useState("");
+  const [lDuration, setLDuration] = useState(60);
 
   // Quiz Builder States
   const [showCreateQuiz, setShowCreateQuiz] = useState<string | null>(null); // lessonId
@@ -213,6 +216,9 @@ export default function Admin() {
       type: lType,
       content: lType === "text" ? lContent : undefined,
       videoId: lType === "video" ? lVideoId : undefined,
+      meetingId: lType === "live" ? (lMeetingId || `CloudEdTech-${Math.random().toString(36).substring(2, 9).toUpperCase()}`) : undefined,
+      startTime: lType === "live" ? lStartTime : undefined,
+      duration: lType === "live" ? lDuration : 60,
     }),
     onSuccess: () => {
       toast.success("Lesson added successfully!");
@@ -220,7 +226,7 @@ export default function Admin() {
       if (selectedCourse) {
         coursesService.getCourseDetail(selectedCourse._id).then(setSelectedCourse);
       }
-      setLTitle(""); setLContent(""); setLVideoId("");
+      setLTitle(""); setLContent(""); setLVideoId(""); setLMeetingId(""); setLStartTime(""); setLDuration(60);
       setShowCreateLesson(null);
     },
   });
@@ -234,6 +240,21 @@ export default function Admin() {
     },
     onError: () => {
       toast.error("Failed to build quiz.");
+    }
+  });
+
+  const updateLiveStatusMutation = useMutation({
+    mutationFn: ({ lessonId, status }: { lessonId: string; status: "scheduled" | "active" | "completed" }) =>
+      coursesService.updateLiveStatus(lessonId, status),
+    onSuccess: () => {
+      toast.success("Live class status updated!");
+      queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
+      if (selectedCourse) {
+        coursesService.getCourseDetail(selectedCourse._id).then(setSelectedCourse);
+      }
+    },
+    onError: () => {
+      toast.error("Failed to update live class status.");
     }
   });
 
@@ -784,9 +805,10 @@ export default function Admin() {
                               >
                                 <option value="video">Video Lecture</option>
                                 <option value="text">Text / Markdown Guide</option>
+                                <option value="live">Live Class Session</option>
                               </select>
                             </div>
-                            {lType === "video" ? (
+                            {lType === "video" && (
                               <div className="space-y-2">
                                 <Label className="text-zinc-300">Select Uploaded Video</Label>
                                 <select
@@ -798,16 +820,49 @@ export default function Admin() {
                                   {videos.map((v: any) => <option key={v.id} value={v.id}>{v.title}</option>)}
                                 </select>
                               </div>
-                            ) : (
+                            )}
+                            {lType === "text" && (
                               <div className="md:col-span-2 space-y-2">
                                 <Label className="text-zinc-300">Markdown Lesson Content</Label>
                                 <Textarea
                                   placeholder="Write study guides, syntax references, or markdown course text..."
-                                  className="bg-zinc-950 border-zinc-800 text-white font-mono h-28 resize-none"
+                                  className="bg-zinc-955 border-zinc-800 text-white font-mono h-28 resize-none"
                                   value={lContent}
                                   onChange={(e) => setLContent(e.target.value)}
                                 />
                               </div>
+                            )}
+                            {lType === "live" && (
+                              <>
+                                <div className="space-y-2">
+                                  <Label className="text-zinc-300">Start Date & Time</Label>
+                                  <Input
+                                    type="datetime-local"
+                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    value={lStartTime}
+                                    onChange={(e) => setLStartTime(e.target.value)}
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-zinc-300">Duration (Minutes)</Label>
+                                  <Input
+                                    type="number"
+                                    min={5}
+                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    value={lDuration}
+                                    onChange={(e) => setLDuration(parseInt(e.target.value) || 60)}
+                                  />
+                                </div>
+                                <div className="md:col-span-2 space-y-2">
+                                  <Label className="text-zinc-300">Meeting Room Name (Optional)</Label>
+                                  <Input
+                                    placeholder="e.g. advanced-react-discussion (Auto-generated if left blank)"
+                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    value={lMeetingId}
+                                    onChange={(e) => setLMeetingId(e.target.value)}
+                                  />
+                                </div>
+                              </>
                             )}
                           </div>
                           <div className="flex gap-2 justify-end pt-2">
@@ -823,22 +878,68 @@ export default function Admin() {
                           <p className="text-xs text-zinc-500 italic">No lessons added to this module yet.</p>
                         ) : (
                           mod.lessons.map((lesson: any, lessonIdx: number) => (
-                            <div key={lesson._id} className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-lg flex items-center justify-between text-xs hover:bg-zinc-900/50 transition-colors">
-                              <div className="flex items-center gap-2.5">
+                            <div key={lesson._id} className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-lg flex flex-col gap-2 md:flex-row md:items-center justify-between text-xs hover:bg-zinc-900/50 transition-colors">
+                              <div className="flex flex-wrap items-center gap-2.5">
                                 <span className="font-semibold text-zinc-500">Lesson {lessonIdx + 1}:</span>
                                 <span className="text-zinc-200 font-medium">{lesson.title}</span>
                                 <Badge variant="outline" className="text-[9px] uppercase border-zinc-700 text-zinc-400">
                                   {lesson.type}
                                 </Badge>
+                                
+                                {lesson.type === "live" && (
+                                  <>
+                                    {lesson.meetingStatus === "scheduled" && (
+                                      <Badge className="bg-amber-500/10 border-amber-500/20 text-amber-400 text-[9px] uppercase">
+                                        Scheduled
+                                      </Badge>
+                                    )}
+                                    {lesson.meetingStatus === "active" && (
+                                      <Badge className="bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[9px] uppercase animate-pulse">
+                                        Live Now
+                                      </Badge>
+                                    )}
+                                    {lesson.meetingStatus === "completed" && (
+                                      <Badge className="bg-zinc-800 border-zinc-700 text-zinc-500 text-[9px] uppercase">
+                                        Finished
+                                      </Badge>
+                                    )}
+                                  </>
+                                )}
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowCreateQuiz(lesson._id)}
-                                className="text-[10px] text-primary hover:text-primary/90 hover:underline p-0 h-auto"
-                              >
-                                + Build Quiz Assessment
-                              </Button>
+                              
+                              <div className="flex items-center gap-3 justify-end">
+                                {lesson.type === "live" && (
+                                  <>
+                                    {lesson.meetingStatus === "scheduled" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => updateLiveStatusMutation.mutate({ lessonId: lesson._id, status: "active" })}
+                                        className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]"
+                                      >
+                                        Go Live
+                                      </Button>
+                                    )}
+                                    {lesson.meetingStatus === "active" && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => updateLiveStatusMutation.mutate({ lessonId: lesson._id, status: "completed" })}
+                                        className="h-7 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px]"
+                                      >
+                                        End Class
+                                      </Button>
+                                    )}
+                                  </>
+                                )}
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setShowCreateQuiz(lesson._id)}
+                                  className="text-[10px] text-primary hover:text-primary/90 hover:underline p-0 h-auto"
+                                >
+                                  + Build Quiz Assessment
+                                </Button>
+                              </div>
                             </div>
                           ))
                         )}

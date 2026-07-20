@@ -23,17 +23,17 @@ export default function Header() {
   }, []);
 
   const navLinks = [
-    { name: "Home", path: "/" },
+    { name: "Dashboard", path: "/dashboard", protected: true },
     { name: "LMS", path: "/lms", protected: true },
     { name: "Live Classes", path: "/live-classes", protected: true },
-    { name: "Dashboard", path: "/dashboard", protected: true },
     { name: "Student Discussion", path: "/chat", protected: true },
+    { name: isAuthenticated ? "Back to Home" : "Home", path: "/" },
   ];
 
   const filteredLinks = navLinks.filter((link) => {
     if (!isAuthenticated) return !link.protected;
     if (user?.role?.toUpperCase() === "ADMIN") {
-      return link.name === "Home" || link.name === "Dashboard";
+      return link.name === "Home" || link.name === "Back to Home" || link.name === "Dashboard";
     }
     return true;
   });

@@ -53,7 +53,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/courses" 
+              path="/lms" 
               element={
                 <ProtectedRoute>
                   <CoursesList />
@@ -61,7 +61,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/courses/:id" 
+              path="/lms/:id" 
               element={
                 <ProtectedRoute>
                   <CourseDetails />
@@ -69,7 +69,7 @@ export default function App() {
               } 
             />
             <Route 
-              path="/course-player/:id" 
+              path="/lms-player/:id" 
               element={
                 <ProtectedRoute>
                   <Watch />
@@ -104,10 +104,13 @@ export default function App() {
             />
 
             {/* Legacy redirects for removed pages */}
-            <Route path="/browse" element={<Navigate to="/courses" replace />} />
+            <Route path="/courses" element={<Navigate to="/lms" replace />} />
+            <Route path="/courses/:id" element={<Navigate to="/lms/:id" replace />} />
+            <Route path="/course-player/:id" element={<Navigate to="/lms-player/:id" replace />} />
+            <Route path="/browse" element={<Navigate to="/lms" replace />} />
             <Route path="/my-learning" element={<Navigate to="/dashboard" replace />} />
             <Route path="/instructor" element={<Navigate to="/admin" replace />} />
-            <Route path="/watch/:id" element={<Navigate to="/courses" replace />} />
+            <Route path="/watch/:id" element={<Navigate to="/lms" replace />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

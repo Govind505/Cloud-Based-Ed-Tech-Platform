@@ -579,7 +579,7 @@ export default function Admin() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-white w-40">
-                          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => navigate(`/course-player/${video.courseId || video.id}`)}><Eye className="h-4 w-4" /> View</DropdownMenuItem>
+                          <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => navigate(`/lms-player/${video.courseId || video.id}`)}><Eye className="h-4 w-4" /> View</DropdownMenuItem>
                           <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => handleEditClick(video)}><Edit className="h-4 w-4" /> Edit</DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-zinc-800" />
                           <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500 gap-2" onClick={() => setDeleteId(video.id)}><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>

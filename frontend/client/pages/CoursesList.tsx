@@ -27,7 +27,7 @@ export default function CoursesList() {
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl"
             >
-              Academic Course Library
+              LMS Portal
             </motion.h1>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl">
               Expand your capabilities with our adaptive curriculum. Access study guides, text resources, and interactive lectures.
@@ -74,54 +74,54 @@ export default function CoursesList() {
                 const isEnrolled = course.enrolledStudents.includes(user?.email || "");
                 return (
                   <motion.div
-                    key={course._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="group bg-card border border-border hover:border-primary/50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-[380px]"
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative aspect-video bg-muted overflow-hidden">
-                      {course.thumbnail ? (
-                        <img
-                          src={course.thumbnail}
-                          alt={course.title}
-                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-                          <BookOpen className="h-12 w-12 text-primary/40" />
-                        </div>
-                      )}
-                      {isEnrolled && (
-                        <span className="absolute top-3 right-3 bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-                          Enrolled
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Body */}
-                    <div className="p-5 flex flex-col flex-1">
-                      <h3 className="text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-                        {course.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-3 flex-1">
-                        {course.description || "No description provided."}
-                      </p>
-                      
-                      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          By {course.instructor?.name || "Instructor"}
-                        </span>
-                        
-                        <Link
-                          to={`/courses/${course._id}`}
-                          className="inline-flex items-center text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-                        >
-                          View Details <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
-                        </Link>
-                      </div>
-                    </div>
+                     key={course._id}
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ delay: idx * 0.05 }}
+                     className="group bg-card border border-border hover:border-primary/50 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-[380px]"
+                   >
+                     {/* Thumbnail */}
+                     <div className="relative aspect-video bg-muted overflow-hidden">
+                       {course.thumbnail ? (
+                         <img
+                           src={course.thumbnail}
+                           alt={course.title}
+                           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                         />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+                           <BookOpen className="h-12 w-12 text-primary/40" />
+                         </div>
+                       )}
+                       {isEnrolled && (
+                         <span className="absolute top-3 right-3 bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+                           Enrolled
+                         </span>
+                       )}
+                     </div>
+ 
+                     {/* Body */}
+                     <div className="p-5 flex flex-col flex-1">
+                       <h3 className="text-lg font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                         {course.title}
+                       </h3>
+                       <p className="text-sm text-muted-foreground mt-2 line-clamp-3 flex-1">
+                         {course.description || "No description provided."}
+                       </p>
+                       
+                       <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                         <span className="text-xs text-muted-foreground">
+                           By {course.instructor?.name || "Instructor"}
+                         </span>
+                         
+                         <Link
+                           to={`/lms/${course._id}`}
+                           className="inline-flex items-center text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                         >
+                           View Details <ChevronRight className="ml-0.5 h-3.5 w-3.5" />
+                         </Link>
+                       </div>
+                     </div>
                   </motion.div>
                 );
               })}

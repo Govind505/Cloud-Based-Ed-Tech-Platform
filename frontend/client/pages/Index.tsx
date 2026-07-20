@@ -240,7 +240,7 @@ export default function Index() {
           <div className="space-y-4">
             <h4 className="text-white font-bold">Platform</h4>
             <ul className="space-y-2 text-sm text-zinc-500">
-              <li className="hover:text-primary transition-colors cursor-pointer"><Link to="/courses">Browse Courses</Link></li>
+              <li className="hover:text-primary transition-colors cursor-pointer"><Link to="/lms">LMS Portal</Link></li>
               <li className="hover:text-primary transition-colors cursor-pointer">Learning Paths</li>
               <li className="hover:text-primary transition-colors cursor-pointer">Mentorship</li>
               <li className="hover:text-primary transition-colors cursor-pointer">Pricing</li>

@@ -22,9 +22,9 @@ export default function CourseDetails() {
   const enrollMutation = useMutation({
     mutationFn: () => coursesService.enrollStudent(id!),
     onSuccess: () => {
-      toast.success("Enrolled successfully! Redirecting to Course Player...");
+      toast.success("Enrolled successfully! Redirecting to LMS Course Player...");
       queryClient.invalidateQueries({ queryKey: ["course-details", id] });
-      navigate(`/course-player/${id}`);
+      navigate(`/lms-player/${id}`);
     },
     onError: () => {
       toast.error("Failed to enroll in the course.");
@@ -44,7 +44,7 @@ export default function CourseDetails() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold text-foreground">Course Not Found</h2>
-        <button onClick={() => navigate("/courses")} className="mt-4 text-primary hover:underline flex items-center gap-1">
+        <button onClick={() => navigate("/lms")} className="mt-4 text-primary hover:underline flex items-center gap-1">
           <ArrowLeft className="h-4 w-4" /> Back to library
         </button>
       </div>
@@ -60,7 +60,7 @@ export default function CourseDetails() {
       <div className="pt-28 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Back btn */}
-          <button onClick={() => navigate("/courses")} className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 mb-6 transition-colors">
+          <button onClick={() => navigate("/lms")} className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1.5 mb-6 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to Library
           </button>
 
@@ -81,7 +81,7 @@ export default function CourseDetails() {
               <div className="mt-6">
                 {isEnrolled ? (
                   <button
-                    onClick={() => navigate(`/course-player/${course._id}`)}
+                    onClick={() => navigate(`/lms-player/${course._id}`)}
                     className="w-full md:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-lg text-sm hover:bg-emerald-700 transition-all shadow-sm"
                   >
                     Start / Resume Learning <Play className="ml-2 h-4 w-4 fill-white" />

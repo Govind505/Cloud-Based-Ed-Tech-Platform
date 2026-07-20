@@ -187,7 +187,7 @@ export default function Watch() {
       <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-4">
         <GraduationCap className="h-16 w-16 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold">Course Not Found</h2>
-        <button onClick={() => navigate("/courses")} className="mt-4 text-primary hover:underline flex items-center gap-1">
+        <button onClick={() => navigate("/lms")} className="mt-4 text-primary hover:underline flex items-center gap-1">
           <ArrowLeft className="h-4 w-4" /> Back to Library
         </button>
       </div>
@@ -198,13 +198,13 @@ export default function Watch() {
   const progressPercent = progress?.progressPercent || 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-zinc-955 text-white">
       <Header />
 
       <main className="pt-20 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto pb-16">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-sm text-zinc-500">
-          <button onClick={() => navigate("/courses")} className="hover:text-primary flex items-center gap-1 transition-colors">
+          <button onClick={() => navigate("/lms")} className="hover:text-primary flex items-center gap-1 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to library
           </button>
           <ChevronRight className="h-3 w-3" />
@@ -264,7 +264,7 @@ export default function Watch() {
                     {/* Mark as Completed */}
                     {completedLessons.includes(activeLesson._id) ? (
                       <span className="inline-flex items-center gap-1 px-4 py-2 bg-emerald-500/10 text-emerald-400 font-medium rounded-lg text-sm border border-emerald-500/20">
-                        <CheckCircle2 className="h-4 w-4" /> Lesson Completed
+                        <CheckedIcon className="h-4 w-4" /> Lesson Completed
                       </span>
                     ) : (
                       <button

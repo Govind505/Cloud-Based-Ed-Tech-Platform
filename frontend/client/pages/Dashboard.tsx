@@ -238,14 +238,14 @@ export default function Dashboard() {
         >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Continue Learning</h2>
-            <Link to="/courses" className="text-primary text-sm hover:underline">View all</Link>
+            <Link to="/lms" className="text-primary text-sm hover:underline">View all</Link>
           </div>
           {user?.enrolledCourses && user.enrolledCourses.length > 0 ? (
             <ContentRow title="" items={user.enrolledCourses} />
           ) : (
             <div className="text-center py-12 border border-zinc-800 rounded-xl bg-zinc-900/30">
               <p className="text-zinc-400 mb-4">You haven't enrolled in any courses yet.</p>
-              <Button onClick={() => navigate('/courses')}>Browse Courses</Button>
+              <Button onClick={() => navigate('/lms')}>Open LMS Portal</Button>
             </div>
           )}
         </motion.div>

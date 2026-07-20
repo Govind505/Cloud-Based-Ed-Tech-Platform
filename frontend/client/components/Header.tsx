@@ -24,9 +24,9 @@ export default function Header() {
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Courses", path: "/courses", protected: true },
+    { name: "LMS", path: "/lms", protected: true },
     { name: "Dashboard", path: "/dashboard", protected: true },
-    { name: "Chat", path: "/chat", protected: true },
+    { name: "Student Discussion", path: "/chat", protected: true },
   ];
 
   const filteredLinks = navLinks.filter(

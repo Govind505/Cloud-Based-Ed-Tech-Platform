@@ -23,7 +23,13 @@ import {
   Globe,
   Database,
   Lock,
-  Mail
+  Mail,
+  GraduationCap,
+  Plus,
+  PlusCircle,
+  BookOpen,
+  HelpCircle,
+  Trash
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -44,6 +50,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { contentService } from "@/services/contentService";
+import { coursesService, Course } from "@/services/coursesService";
 import api from "@/services/api";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -74,7 +81,7 @@ const STATS = [
   { title: "Total Views", value: "1.2M", change: "+21%", icon: BarChart },
 ];
 
-type AdminView = "dashboard" | "users" | "content" | "settings";
+type AdminView = "dashboard" | "users" | "courses" | "content" | "settings";
 
 export default function Admin() {
   const [currentView, setCurrentView] = useState<AdminView>("dashboard");
@@ -88,6 +95,29 @@ export default function Admin() {
   const [uploadDesc, setUploadDesc] = useState("");
   const [courseId, setCourseId] = useState("react-basics");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+
+  // Course builder states
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [showCreateCourse, setShowCreateCourse] = useState(false);
+  const [cTitle, setCTitle] = useState("");
+  const [cDesc, setCDesc] = useState("");
+  const [cThumb, setCThumb] = useState("");
+
+  const [showCreateModule, setShowCreateModule] = useState(false);
+  const [mTitle, setMTitle] = useState("");
+  const [mDesc, setMDesc] = useState("");
+
+  const [showCreateLesson, setShowCreateLesson] = useState<string | null>(null); // moduleId
+  const [lTitle, setLTitle] = useState("");
+  const [lType, setLType] = useState<"video" | "text">("video");
+  const [lContent, setLContent] = useState("");
+  const [lVideoId, setLVideoId] = useState("");
+
+  // Quiz Builder States
+  const [showCreateQuiz, setShowCreateQuiz] = useState<string | null>(null); // lessonId
+  const [questions, setQuestions] = useState<{ question: string; options: string[]; correctAnswerIndex: number }[]>([
+    { question: "", options: ["", "", "", ""], correctAnswerIndex: 0 }
+  ]);
 
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -132,6 +162,13 @@ export default function Admin() {
     queryFn: () => contentService.getVideos({ limit: 50 }),
   });
 
+  // Fetch Courses for Course Builder
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
+    queryKey: ["admin-courses"],
+    queryFn: coursesService.listCourses,
+    enabled: currentView === "courses",
+  });
+
   // Fetch Users
   const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["admin-users"],
@@ -141,6 +178,86 @@ export default function Admin() {
     },
     enabled: currentView === "users",
   });
+
+  // --- Course Builder Mutations ---
+
+  const createCourseMutation = useMutation({
+    mutationFn: () => coursesService.createCourse(cTitle, cDesc, cThumb),
+    onSuccess: () => {
+      toast.success("Course created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
+      setCTitle(""); setCDesc(""); setCThumb("");
+      setShowCreateCourse(false);
+    },
+  });
+
+  const createModuleMutation = useMutation({
+    mutationFn: () => coursesService.addModule(selectedCourse!._id, mTitle, mDesc),
+    onSuccess: (newModule) => {
+      toast.success("Module added!");
+      queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
+      if (selectedCourse) {
+        setSelectedCourse({
+          ...selectedCourse,
+          modules: [...selectedCourse.modules, { ...newModule, lessons: [] }]
+        });
+      }
+      setMTitle(""); setMDesc("");
+      setShowCreateModule(false);
+    },
+  });
+
+  const createLessonMutation = useMutation({
+    mutationFn: (moduleId: string) => coursesService.addLesson(moduleId, {
+      title: lTitle,
+      type: lType,
+      content: lType === "text" ? lContent : undefined,
+      videoId: lType === "video" ? lVideoId : undefined,
+    }),
+    onSuccess: () => {
+      toast.success("Lesson added successfully!");
+      queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
+      if (selectedCourse) {
+        coursesService.getCourseDetail(selectedCourse._id).then(setSelectedCourse);
+      }
+      setLTitle(""); setLContent(""); setLVideoId("");
+      setShowCreateLesson(null);
+    },
+  });
+
+  const createQuizMutation = useMutation({
+    mutationFn: (lessonId: string) => coursesService.createQuiz(lessonId, questions),
+    onSuccess: () => {
+      toast.success("Quiz assessment generated!");
+      setShowCreateQuiz(null);
+      setQuestions([{ question: "", options: ["", "", "", ""], correctAnswerIndex: 0 }]);
+    },
+    onError: () => {
+      toast.error("Failed to build quiz.");
+    }
+  });
+
+  const handleAddQuestion = () => {
+    setQuestions([...questions, { question: "", options: ["", "", "", ""], correctAnswerIndex: 0 }]);
+  };
+
+  const handleQuestionChange = (qIdx: number, val: string) => {
+    const updated = [...questions];
+    updated[qIdx].question = val;
+    setQuestions(updated);
+  };
+
+  const handleOptionChange = (qIdx: number, oIdx: number, val: string) => {
+    const updated = [...questions];
+    updated[qIdx].options[oIdx] = val;
+    setQuestions(updated);
+  };
+
+  const handleCorrectAnswerChange = (qIdx: number, val: number) => {
+    const updated = [...questions];
+    updated[qIdx].correctAnswerIndex = val;
+    setQuestions(updated);
+  };
 
   // --- Mutations ---
 
@@ -479,6 +596,272 @@ export default function Admin() {
     </div>
   );
 
+  const renderCourses = () => (
+    <div className="space-y-8 text-left">
+      <div>
+        <h1 className="text-3xl font-bold text-white mb-2">Course & Curriculum Builder</h1>
+        <p className="text-zinc-400">Design syllabus, structure chapters, add lessons, and build quizzes.</p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Side: Course List */}
+        <div className="lg:w-1/3 flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white">Course Library</h2>
+            <Button
+              size="sm"
+              onClick={() => setShowCreateCourse(!showCreateCourse)}
+              className="bg-primary hover:bg-primary/90 text-white gap-1"
+            >
+              New Course <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {showCreateCourse && (
+            <Card className="bg-zinc-900/50 border-zinc-800 p-5">
+              <h3 className="font-bold text-sm text-white mb-4">Create New Course Profile</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-zinc-300">Course Title</Label>
+                  <Input
+                    placeholder="e.g. Master React Hooks"
+                    className="bg-zinc-950 border-zinc-800 text-white"
+                    value={cTitle}
+                    onChange={(e) => setCTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-zinc-300">Course Description</Label>
+                  <Textarea
+                    placeholder="Describe what students will learn..."
+                    className="bg-zinc-955 border-zinc-800 text-white h-20 resize-none"
+                    value={cDesc}
+                    onChange={(e) => setCDesc(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-zinc-300">Thumbnail URL (Optional)</Label>
+                  <Input
+                    placeholder="https://example.com/thumb.jpg"
+                    className="bg-zinc-950 border-zinc-800 text-white"
+                    value={cThumb}
+                    onChange={(e) => setCThumb(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button variant="ghost" size="sm" onClick={() => setShowCreateCourse(false)}>Cancel</Button>
+                  <Button size="sm" onClick={() => createCourseMutation.mutate()} disabled={!cTitle}>Save Profile</Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {coursesLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : courses.length === 0 ? (
+            <p className="text-sm text-zinc-500 italic text-center py-8">No courses created yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {courses.map((c: any) => (
+                <button
+                  key={c._id}
+                  onClick={() => {
+                    coursesService.getCourseDetail(c._id).then(setSelectedCourse);
+                  }}
+                  className={`w-full text-left p-4 rounded-xl border flex items-center justify-between transition-all ${
+                    selectedCourse?._id === c._id
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/50 text-zinc-300"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1 pr-2">
+                    <h4 className="font-bold text-sm truncate text-white">{c.title}</h4>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">{c.modules?.length || 0} Modules</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-zinc-500" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Course Curriculum Builder */}
+        <div className="flex-1">
+          {selectedCourse ? (
+            <div className="space-y-6">
+              {/* Course Detail Card */}
+              <Card className="bg-zinc-900/50 border-zinc-800 p-6">
+                <h3 className="text-xl font-bold text-white">{selectedCourse.title}</h3>
+                <p className="text-sm text-zinc-400 mt-2">{selectedCourse.description || "No description provided."}</p>
+                <div className="mt-6 pt-4 border-t border-zinc-800/60 flex justify-between items-center flex-wrap gap-2">
+                  <span className="text-xs text-zinc-500">Course ID: <span className="font-mono text-zinc-300">{selectedCourse._id}</span></span>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowCreateModule(!showCreateModule)}
+                    className="bg-primary hover:bg-primary/90 text-white gap-1"
+                  >
+                    Add Chapter / Module <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+
+              {showCreateModule && (
+                <Card className="bg-zinc-900/50 border-zinc-800 p-5">
+                  <h4 className="font-bold text-sm text-white mb-4">Add Curriculum Chapter</h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-zinc-300">Chapter Title</Label>
+                      <Input
+                        placeholder="e.g. Chapter 1: Introduction to Frameworks"
+                        className="bg-zinc-950 border-zinc-800 text-white"
+                        value={mTitle}
+                        onChange={(e) => setMTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-zinc-300">Description (Optional)</Label>
+                      <Input
+                        placeholder="Brief summary of lessons in this chapter..."
+                        className="bg-zinc-950 border-zinc-800 text-white"
+                        value={mDesc}
+                        onChange={(e) => setMDesc(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end pt-2">
+                      <Button variant="ghost" size="sm" onClick={() => setShowCreateModule(false)}>Cancel</Button>
+                      <Button size="sm" onClick={() => createModuleMutation.mutate()} disabled={!mTitle}>Save Chapter</Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Modulessyllabus list */}
+              <div className="space-y-4">
+                {selectedCourse.modules?.length === 0 ? (
+                  <div className="text-center py-10 bg-zinc-900/20 border border-zinc-800 border-dashed rounded-xl text-zinc-500 italic">
+                    Curriculum syllabus is empty. Click "Add Chapter" to build your structure.
+                  </div>
+                ) : (
+                  selectedCourse.modules.map((mod: any, modIdx: number) => (
+                    <Card key={mod._id} className="bg-zinc-900/50 border-zinc-800 p-5">
+                      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                        <div>
+                          <h4 className="font-bold text-base text-white">Module {modIdx + 1}: {mod.title}</h4>
+                          {mod.description && <p className="text-xs text-zinc-400 mt-0.5">{mod.description}</p>}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCreateLesson(mod._id)}
+                          className="text-primary hover:text-primary/90 text-xs font-semibold"
+                        >
+                          + Add Lesson
+                        </Button>
+                      </div>
+
+                      {/* Create Lesson panel */}
+                      {showCreateLesson === mod._id && (
+                        <Card className="mb-4 p-4 border-primary/20 bg-primary/5 space-y-4">
+                          <h5 className="font-bold text-xs text-primary">Add Lesson to Module</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="md:col-span-2 space-y-2">
+                              <Label className="text-zinc-300">Lesson Title</Label>
+                              <Input
+                                placeholder="e.g. Understanding JSX syntax"
+                                className="bg-zinc-950 border-zinc-800 text-white"
+                                value={lTitle}
+                                onChange={(e) => setLTitle(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-zinc-300">Lesson Type</Label>
+                              <select
+                                value={lType}
+                                onChange={(e) => setLType(e.target.value as any)}
+                                className="w-full h-10 px-3 py-2 rounded-md bg-zinc-955 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
+                              >
+                                <option value="video">Video Lecture</option>
+                                <option value="text">Text / Markdown Guide</option>
+                              </select>
+                            </div>
+                            {lType === "video" ? (
+                              <div className="space-y-2">
+                                <Label className="text-zinc-300">Select Uploaded Video</Label>
+                                <select
+                                  value={lVideoId}
+                                  onChange={(e) => setLVideoId(e.target.value)}
+                                  className="w-full h-10 px-3 py-2 rounded-md bg-zinc-955 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
+                                >
+                                  <option value="">-- Choose Transcoded Video --</option>
+                                  {videos.map((v: any) => <option key={v.id} value={v.id}>{v.title}</option>)}
+                                </select>
+                              </div>
+                            ) : (
+                              <div className="md:col-span-2 space-y-2">
+                                <Label className="text-zinc-300">Markdown Lesson Content</Label>
+                                <Textarea
+                                  placeholder="Write study guides, syntax references, or markdown course text..."
+                                  className="bg-zinc-950 border-zinc-800 text-white font-mono h-28 resize-none"
+                                  value={lContent}
+                                  onChange={(e) => setLContent(e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2 justify-end pt-2">
+                            <Button variant="ghost" size="sm" onClick={() => setShowCreateLesson(null)}>Cancel</Button>
+                            <Button size="sm" onClick={() => createLessonMutation.mutate(mod._id)} disabled={!lTitle}>Save Lesson</Button>
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Lessons list */}
+                      <div className="border-t border-zinc-800/60 pt-3 space-y-2">
+                        {mod.lessons?.length === 0 ? (
+                          <p className="text-xs text-zinc-500 italic">No lessons added to this module yet.</p>
+                        ) : (
+                          mod.lessons.map((lesson: any, lessonIdx: number) => (
+                            <div key={lesson._id} className="p-3 bg-zinc-900/30 border border-zinc-800 rounded-lg flex items-center justify-between text-xs hover:bg-zinc-900/50 transition-colors">
+                              <div className="flex items-center gap-2.5">
+                                <span className="font-semibold text-zinc-500">Lesson {lessonIdx + 1}:</span>
+                                <span className="text-zinc-200 font-medium">{lesson.title}</span>
+                                <Badge variant="outline" className="text-[9px] uppercase border-zinc-700 text-zinc-400">
+                                  {lesson.type}
+                                </Badge>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowCreateQuiz(lesson._id)}
+                                className="text-[10px] text-primary hover:text-primary/90 hover:underline p-0 h-auto"
+                              >
+                                + Build Quiz Assessment
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : (
+            <Card className="flex flex-col items-center justify-center py-32 bg-zinc-900/10 border-zinc-800 border-dashed text-center p-8">
+              <BookOpen className="h-16 w-16 text-zinc-700/60 mb-4" />
+              <h3 className="text-lg font-bold text-white">No Course Selected</h3>
+              <p className="text-sm text-zinc-500 mt-1 max-w-sm">
+                Choose a course profile from the list to create modules, build lessons, link videos, and define assessments.
+              </p>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   const renderSettings = () => (
     <div className="space-y-8">
       <div>
@@ -594,6 +977,7 @@ export default function Admin() {
           {[
             { id: "dashboard", name: "Dashboard", icon: BarChart },
             { id: "users", name: "Users", icon: Users },
+            { id: "courses", name: "Course Builder", icon: GraduationCap },
             { id: "content", name: "Content", icon: Video },
             { id: "settings", name: "Settings", icon: Settings },
           ].map((item) => (
@@ -655,6 +1039,7 @@ export default function Admin() {
             >
               {currentView === "dashboard" && renderDashboard()}
               {currentView === "users" && renderUsers()}
+              {currentView === "courses" && renderCourses()}
               {currentView === "content" && renderContent()}
               {currentView === "settings" && renderSettings()}
             </motion.div>
@@ -720,6 +1105,101 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Quiz Modal Overlay */}
+      {showCreateQuiz && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-zinc-950 border border-zinc-800 w-full max-w-xl rounded-xl shadow-lg relative overflow-hidden flex flex-col max-h-[85vh] text-left text-white">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/30 flex justify-between items-center">
+              <h3 className="font-bold text-white">Create Lesson Quiz Assessment</h3>
+              <button onClick={() => setShowCreateQuiz(null)} className="text-zinc-500 hover:text-white">X</button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-5">
+              {questions.map((q, qIdx) => (
+                <div key={qIdx} className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <h5 className="font-bold text-xs text-primary">Question {qIdx + 1}</h5>
+                    {questions.length > 1 && (
+                      <button
+                        onClick={() => setQuestions(questions.filter((_, i) => i !== qIdx))}
+                        className="text-[10px] text-rose-500 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="text-[10px] text-zinc-400 font-semibold">Question Text</label>
+                    <Input
+                      type="text"
+                      className="w-full mt-1 bg-zinc-950 border-zinc-850 text-white text-xs"
+                      placeholder="e.g. What hook is used for side-effects?"
+                      value={q.question}
+                      onChange={e => handleQuestionChange(qIdx, e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {q.options.map((opt, oIdx) => (
+                      <div key={oIdx}>
+                        <label className="text-[9px] text-zinc-400 font-semibold">Option {oIdx + 1}</label>
+                        <Input
+                          type="text"
+                          className="w-full mt-0.5 bg-zinc-950 border-zinc-850 text-white text-xs"
+                          placeholder={`Option ${oIdx + 1}`}
+                          value={opt}
+                          onChange={e => handleOptionChange(qIdx, oIdx, e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-zinc-400 font-semibold">Correct Answer Option</label>
+                    <select
+                      value={q.correctAnswerIndex}
+                      onChange={e => handleCorrectAnswerChange(qIdx, parseInt(e.target.value))}
+                      className="w-full h-9 mt-1 px-3 py-1.5 rounded-md bg-zinc-950 border border-zinc-850 text-zinc-300 text-xs focus:outline-none"
+                    >
+                      <option value={0}>Option 1</option>
+                      <option value={1}>Option 2</option>
+                      <option value={2}>Option 3</option>
+                      <option value={3}>Option 4</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                onClick={handleAddQuestion}
+                variant="outline"
+                className="w-full py-2.5 border-dashed border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-900/50 text-xs rounded-xl"
+              >
+                + Add Another Question
+              </Button>
+            </div>
+
+            <div className="p-4 border-t border-zinc-800 bg-zinc-900/10 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowCreateQuiz(null)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  const invalid = questions.some(q => !q.question.trim() || q.options.some(o => !o.trim()));
+                  if (invalid) {
+                    toast.error("Please fill out all questions and option fields.");
+                    return;
+                  }
+                  createQuizMutation.mutate(showCreateQuiz!);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Save Quiz Assessment
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

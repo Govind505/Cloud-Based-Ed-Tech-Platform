@@ -80,6 +80,18 @@ export default function Header() {
                   Admin
                 </Link>
               )}
+              {(user?.role?.toUpperCase() === "INSTRUCTOR" || user?.role?.toUpperCase() === "ADMIN") && (
+                <Link
+                  to="/instructor"
+                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                    location.pathname === "/instructor"
+                      ? "text-primary bg-primary/10"
+                      : "text-primary/70 hover:text-primary hover:bg-primary/5"
+                  }`}
+                >
+                  Instructor
+                </Link>
+              )}
             </nav>
           </div>
 
@@ -151,6 +163,19 @@ export default function Header() {
                     }`}
                   >
                     Admin
+                  </Link>
+                )}
+                {(user?.role?.toUpperCase() === "INSTRUCTOR" || user?.role?.toUpperCase() === "ADMIN") && (
+                  <Link
+                    to="/instructor"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`px-4 py-3 rounded-xl text-base font-bold ${
+                      location.pathname === "/instructor"
+                        ? "text-primary bg-primary/10"
+                        : "text-primary/70 hover:text-primary hover:bg-primary/5"
+                    }`}
+                  >
+                    Instructor
                   </Link>
                 )}
                 {!isAuthenticated && (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Link, useNavigate } from "react-router-dom";
-import { Loader2, PlayCircle, Clock, CheckCircle, Target, Award, BookOpen, Flame } from "lucide-react";
+import { Loader2, PlayCircle, Clock, CheckCircle, Target, Award, BookOpen, Flame, Megaphone } from "lucide-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,24 @@ export default function Dashboard() {
     badgesEarned: 0,
     recentActivity: []
   });
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const dismissNotification = async (notifId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      await fetch(`${API_BASE_URL}/notifications/${notifId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setNotifications(prev => prev.filter(n => n.id !== notifId));
+    } catch (err) {
+      console.error("Failed to dismiss notification", err);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,9 +49,10 @@ export default function Dashboard() {
           'Authorization': `Bearer ${token}`
         };
 
-        const [profileRes, statsRes] = await Promise.all([
+        const [profileRes, statsRes, notifRes] = await Promise.all([
           fetch(`${API_BASE_URL}/users/profile`, { headers }),
-          fetch(`${API_BASE_URL}/analytics/user/stats`, { headers }).catch(() => null)
+          fetch(`${API_BASE_URL}/analytics/user/stats`, { headers }).catch(() => null),
+          fetch(`${API_BASE_URL}/notifications`, { headers }).catch(() => null)
         ]);
 
         if (!profileRes.ok) {
@@ -54,6 +71,11 @@ export default function Dashboard() {
         if (statsRes && statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
+        }
+
+        if (notifRes && notifRes.ok) {
+          const notifData = await notifRes.json();
+          setNotifications(notifData);
         }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
@@ -86,6 +108,33 @@ export default function Dashboard() {
       <Header />
       
       <main className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
+        
+        {/* Broadcast Messages / Announcements Banner */}
+        {notifications.filter(n => !n.isRead).map((notif) => (
+          <motion.div
+            key={notif.id}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-between gap-4 text-white text-left shadow-lg backdrop-blur"
+          >
+            <div className="flex items-center gap-3">
+              <Megaphone className="h-5 w-5 text-red-400 animate-bounce flex-shrink-0" />
+              <div>
+                <h4 className="font-bold text-sm text-red-400 flex items-center gap-2">
+                  ANNOUNCEMENT: {notif.title}
+                </h4>
+                <p className="text-xs text-zinc-300 mt-0.5">{notif.message}</p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => dismissNotification(notif.id)}
+              className="h-7 px-3 bg-red-500 hover:bg-red-600 text-white font-bold text-xs flex-shrink-0"
+            >
+              Dismiss
+            </Button>
+          </motion.div>
+        ))}
         
         {/* Welcome Banner */}
         <motion.div 

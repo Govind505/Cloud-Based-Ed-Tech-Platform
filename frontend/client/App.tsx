@@ -19,6 +19,7 @@ import CoursesList from "./pages/CoursesList";
 import CourseDetails from "./pages/CourseDetails";
 import CommunityChat from "./pages/CommunityChat";
 import LiveClassroom from "./pages/LiveClassroom";
+import InstructorDashboard from "./pages/InstructorDashboard";
 import { useAuthStore } from "./store/authStore";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -102,12 +103,22 @@ export default function App() {
               } 
             />
 
-            {/* Admin Protected Route */}
+             {/* Admin Protected Route */}
             <Route 
               path="/admin" 
               element={
                 <ProtectedRoute requireAdmin>
                   <Admin />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* Instructor Protected Route */}
+            <Route 
+              path="/instructor" 
+              element={
+                <ProtectedRoute requireInstructor>
+                  <InstructorDashboard />
                 </ProtectedRoute>
               } 
             />
@@ -118,7 +129,6 @@ export default function App() {
             <Route path="/course-player/:id" element={<Navigate to="/lms-player/:id" replace />} />
             <Route path="/browse" element={<Navigate to="/lms" replace />} />
             <Route path="/my-learning" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/instructor" element={<Navigate to="/admin" replace />} />
             <Route path="/watch/:id" element={<Navigate to="/lms" replace />} />
 
             <Route path="*" element={<NotFound />} />

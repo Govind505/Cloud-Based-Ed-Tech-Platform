@@ -25,6 +25,7 @@ export default function Header() {
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "LMS", path: "/lms", protected: true },
+    { name: "Live Classes", path: "/live-classes", protected: true },
     { name: "Dashboard", path: "/dashboard", protected: true },
     { name: "Student Discussion", path: "/chat", protected: true },
   ];
@@ -68,30 +69,6 @@ export default function Header() {
                   {link.name}
                 </Link>
               ))}
-              {(user?.role?.toUpperCase() === "ADMIN") && (
-                <Link
-                  to="/admin"
-                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                    location.pathname === "/admin"
-                      ? "text-primary bg-primary/10"
-                      : "text-primary/70 hover:text-primary hover:bg-primary/5"
-                  }`}
-                >
-                  Admin
-                </Link>
-              )}
-              {(user?.role?.toUpperCase() === "INSTRUCTOR" || user?.role?.toUpperCase() === "ADMIN") && (
-                <Link
-                  to="/instructor"
-                  className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                    location.pathname === "/instructor"
-                      ? "text-primary bg-primary/10"
-                      : "text-primary/70 hover:text-primary hover:bg-primary/5"
-                  }`}
-                >
-                  Instructor
-                </Link>
-              )}
             </nav>
           </div>
 
@@ -152,32 +129,6 @@ export default function Header() {
                     {link.name}
                   </Link>
                 ))}
-                {(user?.role?.toUpperCase() === "ADMIN") && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`px-4 py-3 rounded-xl text-base font-bold ${
-                      location.pathname === "/admin"
-                        ? "text-primary bg-primary/10"
-                        : "text-primary/70 hover:text-primary hover:bg-primary/5"
-                    }`}
-                  >
-                    Admin
-                  </Link>
-                )}
-                {(user?.role?.toUpperCase() === "INSTRUCTOR" || user?.role?.toUpperCase() === "ADMIN") && (
-                  <Link
-                    to="/instructor"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`px-4 py-3 rounded-xl text-base font-bold ${
-                      location.pathname === "/instructor"
-                        ? "text-primary bg-primary/10"
-                        : "text-primary/70 hover:text-primary hover:bg-primary/5"
-                    }`}
-                  >
-                    Instructor
-                  </Link>
-                )}
                 {!isAuthenticated && (
                   <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button className="w-full mt-2 bg-primary">Get Started</Button>

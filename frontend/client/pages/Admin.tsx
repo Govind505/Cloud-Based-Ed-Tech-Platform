@@ -251,7 +251,7 @@ export default function Admin() {
           <Label className="text-zinc-300">Message Details</Label>
           <Textarea
             placeholder="Write announcement details here..."
-            className="bg-zinc-955 border-zinc-800 text-white h-32 resize-none"
+            className="bg-zinc-900 border-zinc-800 text-white h-32 resize-none"
             value={bMessage}
             onChange={(e) => setBMessage(e.target.value)}
           />
@@ -291,14 +291,14 @@ export default function Admin() {
           <Input
             value={siteName}
             onChange={(e) => setSiteName(e.target.value)}
-            className="bg-zinc-955 border-zinc-800 text-white font-bold"
+            className="bg-zinc-900 border-zinc-800 text-white font-bold"
           />
         </div>
 
         <div className="border-t border-zinc-800/80 pt-5 space-y-4">
           <h3 className="font-bold text-sm text-white">System Controls</h3>
           
-          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-955 border border-zinc-800/60">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/30 border border-zinc-800/60">
             <div>
               <p className="text-xs font-bold text-zinc-200">Maintenance Mode</p>
               <p className="text-[10px] text-zinc-500">Temporarily block API endpoints for scheduled updates</p>
@@ -307,11 +307,11 @@ export default function Admin() {
               type="checkbox"
               checked={maintenanceMode}
               onChange={(e) => setMaintenanceMode(e.target.checked)}
-              className="h-4 w-4 text-primary bg-zinc-955 border-zinc-800 rounded"
+              className="h-4 w-4 text-primary bg-zinc-900 border-zinc-800 rounded"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-955 border border-zinc-800/60">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/30 border border-zinc-800/60">
             <div>
               <p className="text-xs font-bold text-zinc-200">New Registration Access</p>
               <p className="text-[10px] text-zinc-500">Allow new students to sign up via credentials form</p>
@@ -320,7 +320,7 @@ export default function Admin() {
               type="checkbox"
               checked={allowRegistration}
               onChange={(e) => setAllowRegistration(e.target.checked)}
-              className="h-4 w-4 text-primary bg-zinc-955 border-zinc-800 rounded"
+              className="h-4 w-4 text-primary bg-zinc-900 border-zinc-800 rounded"
             />
           </div>
         </div>
@@ -352,7 +352,7 @@ export default function Admin() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className={`w-64 bg-zinc-955 border-r border-zinc-800 hidden md:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full absolute"}`}>
+      <aside className={`w-64 bg-zinc-900 border-r border-zinc-800 hidden md:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full absolute"}`}>
         <div className="h-16 flex items-center px-6 border-b border-zinc-800">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center">

@@ -28,7 +28,10 @@ import {
   Bell,
   CheckCircle,
   Megaphone,
-  Radio
+  Radio,
+  VideoIcon,
+  ShieldAlert,
+  Calendar
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +48,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-type InstructorView = "dashboard" | "courses" | "content" | "broadcast";
+type InstructorView = "dashboard" | "courses" | "content" | "broadcast" | "liveClasses";
 
 export default function InstructorDashboard() {
   const [currentView, setCurrentView] = useState<InstructorView>("dashboard");
@@ -76,6 +79,14 @@ export default function InstructorDashboard() {
   const [lStartTime, setLStartTime] = useState("");
   const [lDuration, setLDuration] = useState(60);
 
+  // --- Standalone Live Classes Panel States ---
+  const [schedCourseId, setSchedCourseId] = useState("");
+  const [schedTitle, setSchedTitle] = useState("");
+  const [schedStartTime, setSchedStartTime] = useState("");
+  const [schedDuration, setSchedDuration] = useState(60);
+  const [schedRoomName, setSchedRoomName] = useState("");
+  const [isScheduling, setIsScheduling] = useState(false);
+
   // --- Quiz Builder States ---
   const [showCreateQuiz, setShowCreateQuiz] = useState<string | null>(null); // lessonId
   const [questions, setQuestions] = useState<{ question: string; options: string[]; correctAnswerIndex: number }[]>([
@@ -103,7 +114,7 @@ export default function InstructorDashboard() {
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ["instructor-courses"],
     queryFn: coursesService.listCourses,
-    enabled: currentView === "courses" || currentView === "dashboard",
+    enabled: currentView === "courses" || currentView === "dashboard" || currentView === "liveClasses",
   });
 
   // --- Mutations ---
@@ -230,11 +241,63 @@ export default function InstructorDashboard() {
     setQuestions(updated);
   };
 
+  // Standalone Live Class Scheduling Action
+  const handleScheduleLiveClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schedCourseId || !schedTitle.trim() || !schedStartTime) {
+      toast.error("Please fill out all required fields.");
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      // 1. Get Course detail to find existing modules
+      const course = await coursesService.getCourseDetail(schedCourseId);
+      let targetModuleId = "";
+
+      if (course.modules && course.modules.length > 0) {
+        targetModuleId = course.modules[0]._id;
+      } else {
+        // Create a default Live Lectures module
+        const newModule = await coursesService.addModule(
+          schedCourseId,
+          "Live Interactive Lectures",
+          "All scheduled live video lectures"
+        );
+        targetModuleId = newModule._id;
+      }
+
+      // 2. Add the live lesson
+      const meetingId = schedRoomName.trim() || `CloudEdTech-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+      await coursesService.addLesson(targetModuleId, {
+        title: schedTitle,
+        type: "live",
+        meetingId,
+        startTime: schedStartTime,
+        duration: schedDuration,
+      });
+
+      toast.success("Live class scheduled successfully!");
+      queryClient.invalidateQueries({ queryKey: ["instructor-courses"] });
+
+      // Reset form
+      setSchedTitle("");
+      setSchedStartTime("");
+      setSchedDuration(60);
+      setSchedRoomName("");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to schedule live class.");
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
   // --- RENDER PARTS ---
   const renderDashboard = () => (
     <div className="space-y-8 text-left">
       <div>
-        <h1 className="text-3xl font-extrabold text-white">Welcome back, {user?.name || "Instructor"}!</h1>
+        <h1 className="text-3xl font-extrabold text-white">Welcome back, {user?.firstName || "Instructor"}!</h1>
         <p className="text-zinc-400">Monitor course enrollments, active lecture sessions, and student broadcast stats.</p>
       </div>
 
@@ -294,7 +357,7 @@ export default function InstructorDashboard() {
                   <Label className="text-zinc-300">Course Title</Label>
                   <Input
                     placeholder="e.g. Master React Hooks"
-                    className="bg-zinc-950 border-zinc-800 text-white"
+                    className="bg-zinc-905 border-zinc-800 text-white"
                     value={cTitle}
                     onChange={(e) => setCTitle(e.target.value)}
                   />
@@ -303,7 +366,7 @@ export default function InstructorDashboard() {
                   <Label className="text-zinc-300">Course Description</Label>
                   <Textarea
                     placeholder="Describe what students will learn..."
-                    className="bg-zinc-955 border-zinc-800 text-white h-20 resize-none"
+                    className="bg-zinc-900 border-zinc-800 text-white h-20 resize-none"
                     value={cDesc}
                     onChange={(e) => setCDesc(e.target.value)}
                   />
@@ -312,7 +375,7 @@ export default function InstructorDashboard() {
                   <Label className="text-zinc-300">Thumbnail URL (Optional)</Label>
                   <Input
                     placeholder="https://example.com/thumb.jpg"
-                    className="bg-zinc-955 border-zinc-800 text-white"
+                    className="bg-zinc-900 border-zinc-800 text-white"
                     value={cThumb}
                     onChange={(e) => setCThumb(e.target.value)}
                   />
@@ -382,7 +445,7 @@ export default function InstructorDashboard() {
                       <Label className="text-zinc-300">Chapter Title</Label>
                       <Input
                         placeholder="e.g. Chapter 1: Introduction to Frameworks"
-                        className="bg-zinc-950 border-zinc-800 text-white"
+                        className="bg-zinc-900 border-zinc-800 text-white"
                         value={mTitle}
                         onChange={(e) => setMTitle(e.target.value)}
                       />
@@ -391,7 +454,7 @@ export default function InstructorDashboard() {
                       <Label className="text-zinc-300">Description (Optional)</Label>
                       <Input
                         placeholder="Brief summary of lessons in this chapter..."
-                        className="bg-zinc-950 border-zinc-800 text-white"
+                        className="bg-zinc-900 border-zinc-800 text-white"
                         value={mDesc}
                         onChange={(e) => setMDesc(e.target.value)}
                       />
@@ -435,7 +498,7 @@ export default function InstructorDashboard() {
                               <Label className="text-zinc-300">Lesson Title</Label>
                               <Input
                                 placeholder="e.g. Understanding JSX syntax"
-                                className="bg-zinc-950 border-zinc-800 text-white"
+                                className="bg-zinc-900 border-zinc-800 text-white"
                                 value={lTitle}
                                 onChange={(e) => setLTitle(e.target.value)}
                               />
@@ -445,7 +508,7 @@ export default function InstructorDashboard() {
                               <select
                                 value={lType}
                                 onChange={(e) => setLType(e.target.value as any)}
-                                className="w-full h-10 px-3 py-2 rounded-md bg-zinc-955 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
+                                className="w-full h-10 px-3 py-2 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
                               >
                                 <option value="video">Video Lecture</option>
                                 <option value="text">Text / Markdown Guide</option>
@@ -458,7 +521,7 @@ export default function InstructorDashboard() {
                                 <select
                                   value={lVideoId}
                                   onChange={(e) => setLVideoId(e.target.value)}
-                                  className="w-full h-10 px-3 py-2 rounded-md bg-zinc-955 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
+                                  className="w-full h-10 px-3 py-2 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
                                 >
                                   <option value="">-- Choose Transcoded Video --</option>
                                   {videos.map((v: any) => <option key={v.id} value={v.id}>{v.title}</option>)}
@@ -470,7 +533,7 @@ export default function InstructorDashboard() {
                                 <Label className="text-zinc-300">Markdown Lesson Content</Label>
                                 <Textarea
                                   placeholder="Write study guides, syntax references, or markdown course text..."
-                                  className="bg-zinc-955 border-zinc-800 text-white font-mono h-28 resize-none"
+                                  className="bg-zinc-900 border-zinc-800 text-white font-mono h-28 resize-none"
                                   value={lContent}
                                   onChange={(e) => setLContent(e.target.value)}
                                 />
@@ -482,7 +545,7 @@ export default function InstructorDashboard() {
                                   <Label className="text-zinc-300">Start Date & Time</Label>
                                   <Input
                                     type="datetime-local"
-                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    className="bg-zinc-900 border-zinc-800 text-white"
                                     value={lStartTime}
                                     onChange={(e) => setLStartTime(e.target.value)}
                                   />
@@ -492,7 +555,7 @@ export default function InstructorDashboard() {
                                   <Input
                                     type="number"
                                     min={5}
-                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    className="bg-zinc-900 border-zinc-800 text-white"
                                     value={lDuration}
                                     onChange={(e) => setLDuration(parseInt(e.target.value) || 60)}
                                   />
@@ -501,7 +564,7 @@ export default function InstructorDashboard() {
                                   <Label className="text-zinc-300">Meeting Room Name (Optional)</Label>
                                   <Input
                                     placeholder="e.g. advanced-react-discussion (Auto-generated if left blank)"
-                                    className="bg-zinc-955 border-zinc-800 text-white"
+                                    className="bg-zinc-900 border-zinc-800 text-white"
                                     value={lMeetingId}
                                     onChange={(e) => setLMeetingId(e.target.value)}
                                   />
@@ -676,7 +739,7 @@ export default function InstructorDashboard() {
           <Label className="text-zinc-300">Message Content</Label>
           <Textarea
             placeholder="Write announcement details here..."
-            className="bg-zinc-955 border-zinc-800 text-white h-32 resize-none"
+            className="bg-zinc-900 border-zinc-800 text-white h-32 resize-none"
             value={bMessage}
             onChange={(e) => setBMessage(e.target.value)}
           />
@@ -703,6 +766,189 @@ export default function InstructorDashboard() {
     </div>
   );
 
+  const renderLiveClasses = () => {
+    // Collect all live lessons from courses
+    const liveClassesList: any[] = [];
+    courses.forEach((course: any) => {
+      course.modules?.forEach((mod: any) => {
+        mod.lessons?.forEach((lesson: any) => {
+          if (lesson.type === "live") {
+            liveClassesList.push({
+              ...lesson,
+              courseId: course._id,
+              courseTitle: course.title,
+              moduleId: mod._id,
+            });
+          }
+        });
+      });
+    });
+
+    return (
+      <div className="space-y-8 text-left">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white">Live Virtual Classrooms</h1>
+          <p className="text-zinc-400">Schedule WebRTC streaming classes and toggle live broadcasts for student learning.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Schedule Form */}
+          <Card className="bg-zinc-900/50 border-zinc-800 p-6 h-fit space-y-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" /> Schedule Live Session
+            </h3>
+            
+            <form onSubmit={handleScheduleLiveClass} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Choose Course</Label>
+                <select
+                  value={schedCourseId}
+                  onChange={(e) => setSchedCourseId(e.target.value)}
+                  className="w-full h-10 px-3 py-2 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 text-sm focus:outline-none"
+                  required
+                >
+                  <option value="">-- Choose Target Course --</option>
+                  {courses.map((c: any) => (
+                    <option key={c._id} value={c._id}>{c.title}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Classroom Title</Label>
+                <Input
+                  placeholder="e.g. Advanced State Management Q&A"
+                  value={schedTitle}
+                  onChange={(e) => setSchedTitle(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800 text-white text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Start Date & Time</Label>
+                <Input
+                  type="datetime-local"
+                  value={schedStartTime}
+                  onChange={(e) => setSchedStartTime(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800 text-white text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Duration (Minutes)</Label>
+                <Input
+                  type="number"
+                  min={5}
+                  value={schedDuration}
+                  onChange={(e) => setSchedDuration(parseInt(e.target.value) || 60)}
+                  className="bg-zinc-900 border-zinc-800 text-white text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-zinc-300">Custom Room ID (Optional)</Label>
+                <Input
+                  placeholder="e.g. react-hooks-live"
+                  value={schedRoomName}
+                  onChange={(e) => setSchedRoomName(e.target.value)}
+                  className="bg-zinc-900 border-zinc-800 text-white text-sm"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isScheduling}
+                className="w-full bg-primary hover:bg-primary/95 text-white font-bold py-2"
+              >
+                {isScheduling ? "Scheduling Session..." : "Schedule Live Class"}
+              </Button>
+            </form>
+          </Card>
+
+          {/* List of Scheduled Classes */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-lg font-bold text-white">Your Scheduled Classrooms</h3>
+
+            {liveClassesList.length === 0 ? (
+              <Card className="p-12 text-center bg-zinc-900/10 border-zinc-800 border-dashed text-zinc-500 italic">
+                No live classes scheduled. Use the scheduler panel to create your first session.
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {liveClassesList.map((live: any) => (
+                  <Card key={live._id} className="bg-zinc-900/40 border border-zinc-800 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-white text-sm">{live.title}</h4>
+                        <Badge variant="outline" className="text-[9px] uppercase border-zinc-700 text-zinc-400">
+                          {live.courseTitle}
+                        </Badge>
+                        {live.meetingStatus === "scheduled" && (
+                          <Badge className="bg-amber-500/10 border-amber-500/20 text-amber-400 text-[9px] uppercase">
+                            Scheduled
+                          </Badge>
+                        )}
+                        {live.meetingStatus === "active" && (
+                          <Badge className="bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[9px] uppercase animate-pulse">
+                            Live Now
+                          </Badge>
+                        )}
+                        {live.meetingStatus === "completed" && (
+                          <Badge className="bg-zinc-800 border-zinc-700 text-zinc-500 text-[9px] uppercase">
+                            Finished
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        Starts: {new Date(live.startTime).toLocaleString()} ({live.duration} mins)
+                      </p>
+                      <p className="text-[10px] text-zinc-500 font-mono">
+                        Room Name: {live.meetingId}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
+                      {live.meetingStatus === "scheduled" && (
+                        <Button
+                          size="sm"
+                          onClick={() => updateLiveStatusMutation.mutate({ lessonId: live._id, status: "active" })}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                        >
+                          Go Live
+                        </Button>
+                      )}
+                      {live.meetingStatus === "active" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/live/${live.meetingId}`)}
+                            className="bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-1"
+                          >
+                            <VideoIcon className="h-3.5 w-3.5" /> Enter
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => updateLiveStatusMutation.mutate({ lessonId: live._id, status: "completed" })}
+                            className="bg-red-650 hover:bg-red-700 text-white font-bold text-xs"
+                          >
+                            End Class
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (!isInstructor) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6 text-white text-center">
@@ -723,7 +969,7 @@ export default function InstructorDashboard() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className={`w-64 bg-zinc-950 border-r border-zinc-800 hidden md:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full absolute"}`}>
+      <aside className={`w-64 bg-zinc-900 border-r border-zinc-800 hidden md:block flex-shrink-0 transition-all duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full absolute"}`}>
         <div className="h-16 flex items-center px-6 border-b border-zinc-800">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center">
@@ -736,6 +982,7 @@ export default function InstructorDashboard() {
           {[
             { id: "dashboard", name: "Overview", icon: BarChart },
             { id: "courses", name: "Course Builder", icon: GraduationCap },
+            { id: "liveClasses", name: "Live Classes", icon: Radio },
             { id: "content", name: "Media Manager", icon: Video },
             { id: "broadcast", name: "Broadcast", icon: Megaphone },
           ].map((item) => (
@@ -763,7 +1010,7 @@ export default function InstructorDashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 border-b border-zinc-800 bg-zinc-950/50 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
+        <header className="h-16 border-b border-zinc-800 bg-zinc-955/50 backdrop-blur flex items-center justify-between px-6 sticky top-0 z-10 flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
@@ -788,6 +1035,7 @@ export default function InstructorDashboard() {
             {currentView === "courses" && renderCourses()}
             {currentView === "content" && renderContent()}
             {currentView === "broadcast" && renderBroadcast()}
+            {currentView === "liveClasses" && renderLiveClasses()}
           </motion.div>
         </div>
       </main>
@@ -825,7 +1073,7 @@ export default function InstructorDashboard() {
       {/* Create Quiz Modal Overlay */}
       {showCreateQuiz && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-zinc-955 border border-zinc-800 w-full max-w-xl rounded-xl shadow-lg relative overflow-hidden flex flex-col max-h-[85vh] text-left text-white">
+          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-xl rounded-xl shadow-lg relative overflow-hidden flex flex-col max-h-[85vh] text-left text-white">
             <div className="p-4 border-b border-zinc-800 bg-zinc-900/30 flex justify-between items-center">
               <h3 className="font-bold text-white">Create Lesson Quiz Assessment</h3>
               <button onClick={() => setShowCreateQuiz(null)} className="text-zinc-500 hover:text-white">X</button>
@@ -863,7 +1111,7 @@ export default function InstructorDashboard() {
                         <label className="text-[9px] text-zinc-400 font-semibold">Option {oIdx + 1}</label>
                         <Input
                           type="text"
-                          className="w-full mt-0.5 bg-zinc-955 border-zinc-850 text-white text-xs"
+                          className="w-full mt-0.5 bg-zinc-900 border-zinc-850 text-white text-xs"
                           placeholder={`Option ${oIdx + 1}`}
                           value={opt}
                           onChange={e => handleOptionChange(qIdx, oIdx, e.target.value)}

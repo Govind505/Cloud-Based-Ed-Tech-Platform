@@ -39,7 +39,13 @@ export default function Auth() {
   // Systematic check: if already logged in, redirect away from auth page
   useEffect(() => {
     if (isAuthenticated && user) {
-      const from = (location.state as any)?.from?.pathname || (user.role?.toLowerCase() === "admin" ? "/admin" : "/dashboard");
+      let defaultPath = "/dashboard";
+      if (user.role?.toLowerCase() === "admin") {
+        defaultPath = "/admin";
+      } else if (user.role?.toLowerCase() === "instructor") {
+        defaultPath = "/instructor";
+      }
+      const from = (location.state as any)?.from?.pathname || defaultPath;
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location]);

@@ -66,6 +66,13 @@ export default function Dashboard() {
         }
 
         const userData = await profileRes.json();
+        if (userData.role?.toLowerCase() === "admin") {
+          navigate("/admin", { replace: true });
+          return;
+        } else if (userData.role?.toLowerCase() === "instructor") {
+          navigate("/instructor", { replace: true });
+          return;
+        }
         setUser(userData);
 
         if (statsRes && statsRes.ok) {

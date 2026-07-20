@@ -20,6 +20,7 @@ import CourseDetails from "./pages/CourseDetails";
 import CommunityChat from "./pages/CommunityChat";
 import LiveClassroom from "./pages/LiveClassroom";
 import InstructorDashboard from "./pages/InstructorDashboard";
+import LiveClassesList from "./pages/LiveClassesList";
 import { useAuthStore } from "./store/authStore";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -83,6 +84,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <LiveClassroom />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/live-classes" 
+              element={
+                <ProtectedRoute>
+                  <LiveClassesList />
                 </ProtectedRoute>
               } 
             />

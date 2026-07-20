@@ -198,7 +198,7 @@ export default function Watch() {
   const progressPercent = progress?.progressPercent || 0;
 
   return (
-    <div className="min-h-screen bg-zinc-955 text-white">
+    <div className="min-h-screen bg-zinc-950 text-white">
       <Header />
 
       <main className="pt-20 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto pb-16">

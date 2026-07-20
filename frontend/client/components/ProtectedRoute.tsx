@@ -17,16 +17,6 @@ export default function ProtectedRoute({ children, requireAdmin = false, require
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Centered admin protection: if logged in as Admin, redirect all non-admin protected routes to /admin (except profile/home)
-  if (
-    user?.role?.toUpperCase() === "ADMIN" &&
-    !requireAdmin &&
-    location.pathname !== "/profile" &&
-    location.pathname !== "/"
-  ) {
-    return <Navigate to="/admin" replace />;
-  }
-
   if (requireAdmin && user?.role?.toUpperCase() !== "ADMIN") {
     return <Navigate to="/dashboard" replace />;
   }

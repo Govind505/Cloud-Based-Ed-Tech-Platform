@@ -30,9 +30,13 @@ export default function Header() {
     { name: "Student Discussion", path: "/chat", protected: true },
   ];
 
-  const filteredLinks = navLinks.filter(
-    (link) => !link.protected || isAuthenticated
-  );
+  const filteredLinks = navLinks.filter((link) => {
+    if (!isAuthenticated) return !link.protected;
+    if (user?.role?.toUpperCase() === "ADMIN") {
+      return link.name === "Home" || link.name === "Dashboard";
+    }
+    return true;
+  });
 
   return (
     <header

@@ -45,8 +45,15 @@ export default function CommunityChat() {
   const [groupName, setGroupName] = useState("");
   const [participantInput, setParticipantInput] = useState("");
   
+  const activeRoomRef = useRef<ChatRoom | null>(null);
+  activeRoomRef.current = activeRoom;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getRoomId = (room: ChatRoom | null | undefined): string => {
+    if (!room) return "";
+    return room._id || (room as any).id || "";
+  };
 
   // Fetch Rooms
   const fetchRooms = async () => {
@@ -56,7 +63,7 @@ export default function CommunityChat() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRooms(res.data);
-      if (res.data.length > 0 && !activeRoom) {
+      if (res.data.length > 0 && !activeRoomRef.current) {
         setActiveRoom(res.data[0]);
       }
     } catch (err) {
@@ -68,6 +75,7 @@ export default function CommunityChat() {
 
   // Fetch Messages in Active Room
   const fetchMessages = async (roomId: string) => {
+    if (!roomId) return;
     setIsMessagesLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
@@ -86,29 +94,31 @@ export default function CommunityChat() {
     fetchRooms();
   }, []);
 
-  useEffect(() => {
-    if (activeRoom) {
-      fetchMessages(activeRoom._id);
-    }
-  }, [activeRoom]);
-
-  // Connect WebSockets
+  // Connect WebSockets ONCE on mount
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (!token) return;
+    const socketUrl = API_BASE_URL.startsWith("http")
+      ? `${API_BASE_URL.replace(/\/api$/, "")}/chat`
+      : "/chat";
 
-    const newSocket = io(`${API_BASE_URL}/chat`, {
+    const newSocket = io(socketUrl, {
       auth: { token },
-      transports: ["websocket"],
+      transports: ["polling", "websocket"],
     });
 
     newSocket.on("connect", () => {
       console.log("WebSocket connected to Chat namespace");
       setSocket(newSocket);
+      if (activeRoomRef.current) {
+        const roomId = getRoomId(activeRoomRef.current);
+        newSocket.emit("joinRoom", { roomId });
+      }
     });
 
     newSocket.on("newMessage", (msg: Message) => {
-      if (activeRoom && msg.roomId === activeRoom._id) {
+      const currentRoomId = getRoomId(activeRoomRef.current);
+      const msgRoomId = msg.roomId ? msg.roomId.toString() : "";
+      if (currentRoomId && msgRoomId === currentRoomId) {
         setMessages((prev) => [...prev, msg]);
       }
     });
@@ -120,14 +130,18 @@ export default function CommunityChat() {
     return () => {
       newSocket.disconnect();
     };
-  }, [activeRoom]);
+  }, []);
 
-  // Join Room room on active change
+  // Handle activeRoom selection changes (join room & load messages)
   useEffect(() => {
-    if (socket && activeRoom) {
-      socket.emit("joinRoom", { roomId: activeRoom._id });
+    if (activeRoom) {
+      const roomId = getRoomId(activeRoom);
+      fetchMessages(roomId);
+      if (socket && socket.connected) {
+        socket.emit("joinRoom", { roomId });
+      }
     }
-  }, [socket, activeRoom]);
+  }, [activeRoom, socket]);
 
   // Auto-scroll messages
   useEffect(() => {
@@ -136,10 +150,19 @@ export default function CommunityChat() {
 
   // Send Message
   const handleSendMessage = () => {
-    if (!inputText.trim() || !socket || !activeRoom) return;
+    if (!inputText.trim()) return;
+    const roomId = getRoomId(activeRoom);
+    if (!roomId) {
+      toast.warning("Please select a study group first.");
+      return;
+    }
+    if (!socket || !socket.connected) {
+      toast.error("Chat server disconnected. Reconnecting...");
+      return;
+    }
 
     socket.emit("sendMessage", {
-      roomId: activeRoom._id,
+      roomId,
       content: inputText.trim(),
     });
 
@@ -165,11 +188,17 @@ export default function CommunityChat() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Study group created successfully!");
-      setRooms([res.data, ...rooms]);
-      setActiveRoom(res.data);
+      const newRoom = res.data;
+      setRooms((prev) => [newRoom, ...prev]);
+      setActiveRoom(newRoom);
       setGroupName("");
       setParticipantInput("");
       setShowCreateGroup(false);
+
+      const roomId = getRoomId(newRoom);
+      if (socket && socket.connected && roomId) {
+        socket.emit("joinRoom", { roomId });
+      }
     } catch (err) {
       toast.error("Failed to create study group.");
     }
@@ -178,7 +207,8 @@ export default function CommunityChat() {
   // File upload logic
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeRoom || !socket) return;
+    const roomId = getRoomId(activeRoom);
+    if (!file || !roomId || !socket) return;
 
     const formData = new FormData();
     formData.append("file", file);
@@ -194,7 +224,7 @@ export default function CommunityChat() {
       });
 
       socket.emit("sendMessage", {
-        roomId: activeRoom._id,
+        roomId,
         content: `Shared a file: ${res.data.name}`,
         attachmentUrl: res.data.url,
         attachmentName: res.data.name,
@@ -245,23 +275,27 @@ export default function CommunityChat() {
               ) : rooms.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic text-center mt-10">No study groups. Create one above!</p>
               ) : (
-                rooms.map((room) => (
-                  <button
-                    key={room._id}
-                    onClick={() => setActiveRoom(room)}
-                    className={`w-full text-left p-3.5 rounded-lg border transition-all flex items-center justify-between ${
-                      activeRoom?._id === room._id
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-border hover:bg-muted/40 text-foreground"
-                    }`}
-                  >
+                rooms.map((room) => {
+                  const rId = getRoomId(room);
+                  const isSelected = getRoomId(activeRoom) === rId;
+                  return (
+                    <button
+                      key={rId}
+                      onClick={() => setActiveRoom(room)}
+                      className={`w-full text-left p-3.5 rounded-lg border transition-all flex items-center justify-between ${
+                        isSelected
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted/40 text-foreground"
+                      }`}
+                    >
                     <div>
                       <h4 className="font-bold text-xs md:text-sm truncate max-w-[150px]">{room.name}</h4>
                       <p className="text-[10px] text-muted-foreground mt-0.5">{room.participants.length} members</p>
                     </div>
-                    <MessageSquare className="h-3.5 w-3.5 text-muted-foreground/60" />
-                  </button>
-                ))
+                      <MessageSquare className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

@@ -183,7 +183,7 @@ export default function Admin() {
               </thead>
               <tbody className="divide-y divide-zinc-850">
                 {users.map((u: any) => (
-                  <tr key={u._id} className="hover:bg-zinc-900/20">
+                  <tr key={u.id} className="hover:bg-zinc-900/20">
                     <td className="px-6 py-4 font-semibold text-white">{u.name}</td>
                     <td className="px-6 py-4 text-zinc-400 font-mono">{u.email}</td>
                     <td className="px-6 py-4">
@@ -199,7 +199,7 @@ export default function Admin() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleRoleToggle(u._id, u.role)}
+                        onClick={() => handleRoleToggle(u.id, u.role)}
                         className="text-xs hover:text-white text-zinc-400 gap-1"
                         disabled={promoteUserMutation.isPending}
                       >
@@ -210,7 +210,7 @@ export default function Admin() {
                         variant="ghost"
                         onClick={() => {
                           if (confirm(`Are you sure you want to delete user ${u.name}?`)) {
-                            deleteUserMutation.mutate(u._id);
+                            deleteUserMutation.mutate(u.id);
                           }
                         }}
                         className="text-xs text-rose-500 hover:text-rose-400 hover:bg-rose-950/20"

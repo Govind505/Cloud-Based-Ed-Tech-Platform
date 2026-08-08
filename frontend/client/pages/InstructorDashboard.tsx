@@ -188,8 +188,12 @@ export default function InstructorDashboard() {
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!videoFile) return;
-      return contentService.uploadVideo(videoFile, uploadTitle, uploadDesc, courseId);
+      return contentService.uploadVideo({
+        file: videoFile,
+        title: uploadTitle,
+        description: uploadDesc,
+        courseId,
+      });
     },
     onSuccess: () => {
       toast.success("Video upload started! Transcoding in background...");

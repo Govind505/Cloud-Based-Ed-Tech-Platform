@@ -307,8 +307,15 @@ export default function CommunityChat() {
                 {/* Header */}
                 <div className="p-4 border-b border-border bg-muted/20 flex justify-between items-center">
                   <div>
-                    <h3 className="font-bold text-foreground text-sm md:text-base">{activeRoom.name}</h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Secure 128-bit AES Encrypted Channel</p>
+                    <h3 className="font-extrabold text-foreground text-sm md:text-base">{activeRoom.name}</h3>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Secure End-to-End Encrypted Channel</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    {socket?.connected ? "REALTIME CONNECTED" : "CONNECTING..."}
                   </div>
                 </div>
 

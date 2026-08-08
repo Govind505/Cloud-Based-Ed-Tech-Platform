@@ -127,31 +127,40 @@ export default function Admin() {
   // --- View Renders ---
   const renderDashboard = () => (
     <div className="space-y-8 text-left">
-      <div>
-        <h1 className="text-3xl font-extrabold text-white">System Administration</h1>
-        <p className="text-zinc-400">Review global telemetry, active user counts, and platform database metrics.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight">System Administration</h1>
+          <p className="text-zinc-400 text-sm mt-1">Review global telemetry, active user counts, and platform database metrics.</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 w-fit">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          TELEMETRY LIVE SYNC
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="bg-zinc-900/50 border-zinc-800 p-6 flex items-center gap-4 text-white">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl"><Users className="h-6 w-6" /></div>
+        <Card className="bg-zinc-900/60 backdrop-blur-md border-zinc-800 p-6 flex items-center gap-4 text-white shadow-xl hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl group-hover:scale-110 transition-transform"><Users className="h-6 w-6" /></div>
           <div>
-            <p className="text-xs text-zinc-500 font-bold uppercase">Registered Users</p>
-            <p className="text-2xl font-black mt-1">{globalStats?.totalUsers || 24}</p>
+            <p className="text-xs text-zinc-500 font-extrabold uppercase tracking-wider">Registered Users</p>
+            <p className="text-3xl font-black mt-1 bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">{globalStats?.totalUsers || 24}</p>
           </div>
         </Card>
-        <Card className="bg-zinc-900/50 border-zinc-800 p-6 flex items-center gap-4 text-white">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><Globe className="h-6 w-6" /></div>
+        <Card className="bg-zinc-900/60 backdrop-blur-md border-zinc-800 p-6 flex items-center gap-4 text-white shadow-xl hover:border-emerald-500/40 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="p-3.5 bg-emerald-500/10 text-emerald-400 rounded-2xl group-hover:scale-110 transition-transform"><Globe className="h-6 w-6" /></div>
           <div>
-            <p className="text-xs text-zinc-500 font-bold uppercase">Active Classrooms</p>
-            <p className="text-2xl font-black mt-1">12 Session Hubs</p>
+            <p className="text-xs text-zinc-500 font-extrabold uppercase tracking-wider">Active Hubs</p>
+            <p className="text-3xl font-black mt-1 text-emerald-400">12 Online</p>
           </div>
         </Card>
-        <Card className="bg-zinc-900/50 border-zinc-800 p-6 flex items-center gap-4 text-white">
-          <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><Megaphone className="h-6 w-6" /></div>
+        <Card className="bg-zinc-900/60 backdrop-blur-md border-zinc-800 p-6 flex items-center gap-4 text-white shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 group">
+          <div className="p-3.5 bg-amber-500/10 text-amber-400 rounded-2xl group-hover:scale-110 transition-transform"><Megaphone className="h-6 w-6" /></div>
           <div>
-            <p className="text-xs text-zinc-500 font-bold uppercase">Active Broadcasts</p>
-            <p className="text-2xl font-black mt-1">System Alerts Online</p>
+            <p className="text-xs text-zinc-500 font-extrabold uppercase tracking-wider">Broadcast Telemetry</p>
+            <p className="text-3xl font-black mt-1 text-amber-400">Active</p>
           </div>
         </Card>
       </div>

@@ -624,8 +624,12 @@ export default function InstructorDashboard() {
                                       <Button
                                         size="sm"
                                         onClick={() => updateLiveStatusMutation.mutate({ lessonId: lesson._id, status: "active" })}
-                                        className="h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]"
+                                        className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px] shadow-md shadow-emerald-600/30 transition-all hover:scale-105"
                                       >
+                                        <span className="relative flex h-1.5 w-1.5 mr-1.5">
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                        </span>
                                         Go Live
                                       </Button>
                                     )}
@@ -633,8 +637,12 @@ export default function InstructorDashboard() {
                                       <Button
                                         size="sm"
                                         onClick={() => updateLiveStatusMutation.mutate({ lessonId: lesson._id, status: "completed" })}
-                                        className="h-7 px-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[10px]"
+                                        className="h-7 px-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-[10px] shadow-md shadow-rose-600/30 transition-all hover:scale-105"
                                       >
+                                        <span className="relative flex h-1.5 w-1.5 mr-1.5">
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                        </span>
                                         End Class
                                       </Button>
                                     )}

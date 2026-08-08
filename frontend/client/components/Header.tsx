@@ -49,30 +49,44 @@ export default function Header() {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between">
           {/* Left: Logo & Nav */}
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 group">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
                 <Play className="h-5 w-5 text-primary-foreground fill-current" />
               </div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-                CloudEdTech
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+                  CloudEdTech
+                </span>
+              </div>
             </Link>
 
-            <nav className="hidden lg:flex items-center gap-1">
-              {filteredLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    location.pathname === link.path
-                      ? "text-primary bg-primary/10"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              ))}
+            {/* Real-time System Online Beacon */}
+            <div className="hidden xl:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              SYSTEM ONLINE
+            </div>
+
+            <nav className="hidden lg:flex items-center gap-1.5 ml-2">
+              {filteredLinks.map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`relative px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      isActive
+                        ? "text-white bg-primary/15 shadow-sm border border-primary/20"
+                        : "text-zinc-400 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 

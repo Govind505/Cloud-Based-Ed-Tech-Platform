@@ -8,7 +8,7 @@ export default function LiveClassroom() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
-  const userName = user?.name || "Student";
+  const userName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "Student";
   const userEmail = user?.email || "";
 
   // Jitsi Meet embedding via standard iframe (secure and zero-dependency)

@@ -62,12 +62,20 @@ export default function UserMenu() {
             </Link>
           </DropdownMenuItem>
           {user.role?.toUpperCase() === "ADMIN" && (
-            <DropdownMenuItem asChild>
-              <Link to="/admin" className="cursor-pointer text-primary font-medium">
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                <span>Admin Panel</span>
-              </Link>
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem asChild>
+                <Link to="/instructor" className="cursor-pointer text-primary font-medium">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  <span>Instructor Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="cursor-pointer text-primary font-medium">
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

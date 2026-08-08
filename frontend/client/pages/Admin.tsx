@@ -115,12 +115,7 @@ export default function Admin() {
   };
 
   const handleRoleToggle = (userId: string, currentRole: string) => {
-    const nextRoleMap: Record<string, string> = {
-      user: "instructor",
-      instructor: "admin",
-      admin: "user",
-    };
-    const nextRole = nextRoleMap[currentRole.toLowerCase()] || "user";
+    const nextRole = currentRole.toLowerCase() === "admin" ? "student" : "admin";
     promoteUserMutation.mutate({ userId, role: nextRole });
   };
 
@@ -193,7 +188,7 @@ export default function Admin() {
               <tbody className="divide-y divide-zinc-850">
                 {users.map((u: any) => (
                   <tr key={u.id} className="hover:bg-zinc-900/20">
-                    <td className="px-6 py-4 font-semibold text-white">{u.name}</td>
+                    <td className="px-6 py-4 font-semibold text-white">{`${u.firstName || ""} ${u.lastName || ""}`.trim() || "N/A"}</td>
                     <td className="px-6 py-4 text-zinc-400 font-mono">{u.email}</td>
                     <td className="px-6 py-4">
                       <Badge className={`uppercase text-[10px] font-bold ${
@@ -218,7 +213,7 @@ export default function Admin() {
                         size="sm"
                         variant="ghost"
                         onClick={() => {
-                          if (confirm(`Are you sure you want to delete user ${u.name}?`)) {
+                          if (confirm(`Are you sure you want to delete user ${u.firstName || ""} ${u.lastName || ""}?`)) {
                             deleteUserMutation.mutate(u.id);
                           }
                         }}

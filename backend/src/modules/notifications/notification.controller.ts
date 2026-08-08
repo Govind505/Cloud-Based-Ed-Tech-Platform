@@ -13,7 +13,7 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.INSTRUCTOR) // Both Admin and Instructor can send notifications
+  @Roles(UserRole.ADMIN) // Only Admin can send notifications
   async create(@Body() createNotificationDto: CreateNotificationDto): Promise<NotificationResponseDto> {
     return this.notificationService.create(createNotificationDto);
   }

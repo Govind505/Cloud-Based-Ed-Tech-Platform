@@ -11,7 +11,7 @@ export class AssessmentsController {
   constructor(private readonly assessmentsService: AssessmentsService) {}
 
   @Post('lessons/:lessonId/quiz')
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   async createQuiz(
     @Param('lessonId') lessonId: string,
     @Body('questions') questions: any[],
@@ -24,7 +24,7 @@ export class AssessmentsController {
     @Param('lessonId') lessonId: string,
     @CurrentUser() user: ITokenPayload,
   ) {
-    const isTeacher = user.role === UserRole.INSTRUCTOR || user.role === UserRole.ADMIN;
+    const isTeacher = user.role === UserRole.ADMIN;
     return this.assessmentsService.getQuiz(lessonId, isTeacher);
   }
 

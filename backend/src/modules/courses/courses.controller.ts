@@ -12,7 +12,7 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   @Post()
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   async createCourse(
     @Body() createCourseDto: CreateCourseDto,
     @CurrentUser() user: any,
@@ -44,7 +44,7 @@ export class CoursesController {
   }
 
   @Post(':id/modules')
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   async addModule(
     @Param('id') id: string,
     @Body() createModuleDto: CreateModuleDto,
@@ -53,7 +53,7 @@ export class CoursesController {
   }
 
   @Post('modules/:moduleId/lessons')
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   async addLesson(
     @Param('moduleId') moduleId: string,
     @Body() createLessonDto: CreateLessonDto,
@@ -72,7 +72,7 @@ export class CoursesController {
   }
 
   @Patch('lessons/:lessonId/live-status')
-  @Roles(UserRole.INSTRUCTOR, UserRole.ADMIN)
+  @Roles(UserRole.ADMIN)
   async updateLiveStatus(
     @Param('lessonId') lessonId: string,
     @Body('status') status: string,

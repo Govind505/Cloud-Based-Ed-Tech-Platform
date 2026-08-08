@@ -32,9 +32,6 @@ export default function Header() {
 
   const filteredLinks = navLinks.filter((link) => {
     if (!isAuthenticated) return !link.protected;
-    if (user?.role?.toUpperCase() === "ADMIN") {
-      return link.name === "Home" || link.name === "Back to Home" || link.name === "Dashboard";
-    }
     return true;
   });
 

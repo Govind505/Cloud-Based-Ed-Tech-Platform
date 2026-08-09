@@ -4,6 +4,10 @@
   "outputDirectory": "dist/spa",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "https://cloudedtech-backend.onrender.com/api/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

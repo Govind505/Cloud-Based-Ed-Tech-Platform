@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: cloudedtech-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: node dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true

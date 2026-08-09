@@ -17,13 +17,12 @@ export class DatabaseConfig implements MongooseOptionsFactory {
       uri,
       retryAttempts,
       retryDelay,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
       socketTimeoutMS: 45000,
       // Enable automatic index creation in development
       autoIndex: process.env.NODE_ENV !== 'production',
       // Connection pooling
       maxPoolSize: 10,
-      minPoolSize: 5,
     };
   }
 }

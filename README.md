@@ -1,53 +1,91 @@
-# Cloud Based Ed-Tech Platform (Monorepo)
+# 🎓 Cloud Based Ed-Tech Platform
 
-Welcome to the unified **Cloud Based Ed-Tech Platform** codebase. This project has been consolidated into a single working monorepo directory for easy local development and deployment.
+A modern, full-stack, enterprise-grade Educational Technology (Ed-Tech) platform built as a high-performance monorepo. Features adaptive video playback, role-based dashboards, strict anti-cheating assessment portals, virtual live classrooms, and community discussion rooms.
 
 ---
 
-## 🚀 How to Run the Project Locally
+## 🌟 Key Platform Features
 
-Follow these steps to run the entire project on your localhost.
+- 👥 **Multi-Role Workspace Portals**:
+  - **Student Portal**: Dashboard analytics, enrolled courses, quiz assessments, live classes.
+  - **Instructor Portal**: Course management, syllabus builder, live stream scheduling (`Go Live`/`End`), student progress tracking.
+  - **Admin Portal**: User role management, platform analytics, system metrics.
+- 🛡️ **Anti-Cheating Quiz Engine**:
+  - Strict assessment portal with full-screen enforcement, tab-switch detection, auto-submission, and copy-paste prevention.
+- 📹 **Live Virtual Classrooms**:
+  - WebRTC-powered virtual classrooms (Jitsi integration) for real-time lectures and Q&A sessions.
+- 💬 **Student Discussion Forum**:
+  - Community chat rooms for peer discussions and real-time collaboration.
 
-### Step 1: Start Docker Infrastructure Services
-Make sure Docker Desktop is running on your machine, then run:
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Vite 7, React 18, TypeScript, Tailwind CSS, Lucide Icons, Axios, Zustand
+- **Backend**: NestJS, TypeScript, Mongoose (MongoDB), Socket.io, Passport JWT
+- **Database & Services**: MongoDB, Redis (Caching), RabbitMQ (Message Queue), Jitsi (WebRTC)
+- **Deployment**: Vercel (Frontend), Render (Backend), MongoDB Atlas (Database)
+
+---
+
+## 🚀 Quick Start (Localhost Setup)
+
+### Prerequisites
+- Node.js v18+
+- Docker & Docker Desktop (for local MongoDB, Redis, and RabbitMQ)
+
+### 1. Clone & Install Dependencies
 ```bash
-docker compose down # Clean up any stale/broken OCI states
-docker compose up -d
-```
-This will start MongoDB, Redis, RabbitMQ, Jaeger, MinIO, Grafana, and Prometheus.
-
-### Step 2: Install Dependencies
-Install all package dependencies for both the backend and frontend:
-```bash
+git clone https://github.com/Govind505/Cloud-Based-Ed-Tech-Platform.git
+cd Cloud-Based-Ed-Tech-Platform
 npm run install:all
 ```
 
-### Step 3: Seed the Database
-Seed the MongoDB database with default student and admin accounts, as well as sample videos:
+### 2. Start Infrastructure Containers
+```bash
+docker compose up -d mongo redis rabbitmq
+```
+
+### 3. Seed Local Database
 ```bash
 npm run seed
 ```
 
-### Step 4: Run the Development Servers
-Start both the NestJS backend and the Vite frontend concurrently:
+### 4. Run Development Servers
 ```bash
 npm run dev
 ```
 
-*   **Frontend Client:** [http://localhost:8080](http://localhost:8080)
-*   **Backend API Gateway:** [http://localhost:3000](http://localhost:3000)
-*   **Swagger API Docs:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
-*   **MinIO Console:** [http://localhost:9001](http://localhost:9001) (Credentials: `minioadmin` / `minioadmin`)
+- **Frontend Application**: `http://localhost:8080`
+- **Backend REST API**: `http://localhost:3000`
+- **Swagger Documentation**: `http://localhost:3000/api/docs`
 
 ---
 
-## 🔑 Seed User Accounts
+## 🔑 Seed User Accounts (Local Testing)
 
-After running the seed script, you can log in using:
+All seed accounts use the default password: **`password123`**
 
-*   **Student Account:**
-    *   **Email:** `student@cloudedtech.com`
-    *   **Password:** `password123`
-*   **Admin Account:**
-    *   **Email:** `admin@cloudedtech.com`
-    *   **Password:** `password123`
+| Role | Email | Password | Default Redirect |
+| :--- | :--- | :--- | :--- |
+| **Student** | `student@cloudedtech.com` | `password123` | `/dashboard` |
+| **Instructor** | `instructor@cloudedtech.com` | `password123` | `/instructor` |
+| **Admin** | `admin@cloudedtech.com` | `password123` | `/admin` |
+
+---
+
+## 🧹 Database Utility Commands
+
+```bash
+# Seed local database with default users and sample videos
+npm run seed
+
+# Wipe all database collections for clean production deployment
+npm run db:clear
+```
+
+---
+
+## 📄 License & Open Source
+
+This repository is sanitized, professional, and free of sensitive credentials. Open for production deployment and customization.

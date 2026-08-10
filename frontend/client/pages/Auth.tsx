@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'student' | 'instructor' | 'admin'>('student');
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -67,6 +68,16 @@ export default function Auth() {
     }
   };
 
+  const fillDemoAccount = (role: 'student' | 'instructor' | 'admin') => {
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    const passInput = document.getElementById('password') as HTMLInputElement;
+    if (emailInput && passInput) {
+      emailInput.value = `${role}@cloudedtech.com`;
+      passInput.value = 'password123';
+      toast({ title: "Demo Credentials Filled", description: `Populated ${role.toUpperCase()} login: ${role}@cloudedtech.com` });
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -74,12 +85,13 @@ export default function Auth() {
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const role = selectedRole;
     const [firstName, ...rest] = name.split(' ');
     const lastName = rest.join(' ') || 'User';
 
     try {
-      await register(email, firstName, lastName, password);
-      toast({ title: "Success!", description: "Account created successfully." });
+      await register(email, firstName, lastName, password, role);
+      toast({ title: "Success!", description: `Account created successfully as ${role.toUpperCase()}.` });
     } catch (err: any) {
       toast({ title: "Error", description: err.response?.data?.message || err.message || 'Registration failed', variant: "destructive" });
     } finally {
@@ -199,6 +211,23 @@ export default function Auth() {
                     />
                   </div>
                 </div>
+
+                {/* Demo Quick Fill Buttons */}
+                <div className="pt-1">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-2">Quick Demo Credentials</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => fillDemoAccount('student')} className="text-xs h-8 border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800">
+                      Student
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => fillDemoAccount('instructor')} className="text-xs h-8 border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800">
+                      Instructor
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => fillDemoAccount('admin')} className="text-xs h-8 border-zinc-800 bg-zinc-900/50 text-zinc-300 hover:text-white hover:bg-zinc-800">
+                      Admin
+                    </Button>
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full h-12 bg-primary text-white hover:bg-primary/90 font-bold rounded-xl shadow-lg shadow-primary/20 mt-2" disabled={isLoading}>
                   {isLoading ? "Authenticating..." : (
                     <>
@@ -242,6 +271,33 @@ export default function Auth() {
                     />
                   </div>
                 </div>
+
+                {/* Role Selector */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500 ml-1">Account Role</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { role: 'student', label: 'Student' },
+                      { role: 'instructor', label: 'Instructor' },
+                      { role: 'admin', label: 'Admin' },
+                    ].map((r) => (
+                      <Button
+                        key={r.role}
+                        type="button"
+                        variant={selectedRole === r.role ? 'default' : 'outline'}
+                        onClick={() => setSelectedRole(r.role as any)}
+                        className={`h-10 text-xs font-bold rounded-xl ${
+                          selectedRole === r.role 
+                            ? 'bg-primary text-white border-primary' 
+                            : 'bg-zinc-900/50 border-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {r.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full h-12 bg-primary text-white hover:bg-primary/90 font-bold rounded-xl shadow-lg shadow-primary/20 mt-2" disabled={isLoading}>
                   {isLoading ? "Creating Account..." : (
                     <>

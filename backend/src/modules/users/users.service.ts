@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
@@ -14,11 +14,64 @@ import * as path from 'path';
  * Handles user CRUD operations and profile management
  */
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private s3Service: S3Service,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const count = await this.userModel.countDocuments();
+      if (count === 0) {
+        console.log('No users found in database. Auto-seeding default student, instructor, and admin accounts...');
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('password123', salt);
+
+        await this.userModel.insertMany([
+          {
+            email: 'student@cloudedtech.com',
+            firstName: 'Sarah',
+            lastName: 'Chen',
+            password: hashedPassword,
+            role: UserRole.STUDENT,
+            isActive: true,
+            emailVerified: true,
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
+            bio: 'Aspiring Frontend Developer',
+            subscriptionTier: 'free',
+          },
+          {
+            email: 'instructor@cloudedtech.com',
+            firstName: 'Marcus',
+            lastName: 'Aurelius',
+            password: hashedPassword,
+            role: UserRole.INSTRUCTOR,
+            isActive: true,
+            emailVerified: true,
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus',
+            bio: 'Senior Technical Instructor & Author',
+            subscriptionTier: 'premium',
+          },
+          {
+            email: 'admin@cloudedtech.com',
+            firstName: 'Alex',
+            lastName: 'Rivera',
+            password: hashedPassword,
+            role: UserRole.ADMIN,
+            isActive: true,
+            emailVerified: true,
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
+            bio: 'Senior Infrastructure Engineer',
+            subscriptionTier: 'premium',
+          },
+        ]);
+        console.log('✓ Default accounts auto-seeded successfully!');
+      }
+    } catch (err) {
+      console.error('Error auto-seeding default users on init:', err);
+    }
+  }
 
   /**
    * Update user avatar
